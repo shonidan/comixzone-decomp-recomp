@@ -25,6 +25,7 @@
 #include "automap.h"
 #include "texpack.h"
 #include "menu.h"
+#include "pause.h"
 #include "savestate.h"
 #include "music.h"
 #include "ui.h"
@@ -1047,6 +1048,7 @@ int main(int argc, char **argv) {
     if (audio) { sound_out_rate = have.freq; SDL_PauseAudioDevice(audio, 0); }
     menu_audio = audio;
     menu_sound = play_menu_sound;
+    pause_sound = play_menu_sound;
 
     /* Short messages (save, load, slot) show in the window title for two seconds. */
     char message[128] = "";
@@ -1068,11 +1070,28 @@ int main(int argc, char **argv) {
         SDL_GetRendererOutputSize(ren, &ww, &wh);
         while (SDL_PollEvent(&e)) {
             pads_event(&e);
-            /* The pause/settings menu (inherited from the shared engine) is disabled for this
-             * build: Esc, the Guide button and the menu binding all do nothing. Controls stay
-             * at their defaults. */
+            if (getenv("PAUSE_DEBUG") && e.type == SDL_CONTROLLERBUTTONDOWN)
+                fprintf(stderr, "[main] button %d (%s) down\n", e.cbutton.button,
+                        SDL_GameControllerGetStringForButton((SDL_GameControllerButton)e.cbutton.button));
+            /* Streets of Rage's own pause/settings menu (tabs, outfits, cheats) is disabled
+             * for this build; pause.c is our own, much smaller one instead (Save state, Load
+             * state, Rewind/fast-forward on or off, Quit), opened and closed by the same
+             * binding (input.h's IN_MENU: Esc by default, and the pad's "-"/select button). */
             bool open_menu = false;
             if (e.type == SDL_QUIT) { running = false; launcher_window_closed = true; }
+            else if (pause_is_open()) {
+                switch (pause_event(&e)) {
+                case PAUSE_CLOSE: case PAUSE_LOADED: pause_close(); break;
+                case PAUSE_QUIT: running = false; break;
+                case PAUSE_NONE: break;
+                }
+            } else if (input_event_is(IN_MENU, &e)) {
+                int win_w, win_h;
+                SDL_GetWindowSize(win, &win_w, &win_h);
+                SDL_Rect r = display_rect(ww, wh);
+                pause_open(framebuffer, frame_width(), vdp_screen_height(), FB_W, r.x, r.y, r.w, r.h, ww, wh,
+                           win_w ? (float)ww / win_w : 1);
+            }
             else if (menu_is_open()) {
                 bool was_rewind = settings.rewind;
                 switch (menu_event(&e)) {
@@ -1131,6 +1150,31 @@ int main(int argc, char **argv) {
             }
 #endif
         }
+        if (pause_is_open()) {
+            if (ww != ui_w || wh != ui_h) {     /* resized or fullscreen toggled: rebuild the backdrop */
+                int win_w, win_h;
+                SDL_GetWindowSize(win, &win_w, &win_h);
+                SDL_Rect r = display_rect(ww, wh);
+                pause_open(framebuffer, frame_width(), vdp_screen_height(), FB_W, r.x, r.y, r.w, r.h, ww, wh,
+                           win_w ? (float)ww / win_w : 1);
+            }
+            pause_render((double)(SDL_GetPerformanceCounter() - start) / freq);
+            if (!menu_tex || menu_tex_w != ui_w || menu_tex_h != ui_h) {
+                if (menu_tex) SDL_DestroyTexture(menu_tex);
+                menu_tex = SDL_CreateTexture(ren, SDL_PIXELFORMAT_XRGB8888, SDL_TEXTUREACCESS_STREAMING, ui_w, ui_h);
+                menu_tex_w = ui_w; menu_tex_h = ui_h;
+            }
+            SDL_UpdateTexture(menu_tex, NULL, ui_px, ui_w * 4);
+            SDL_RenderClear(ren);
+            SDL_RenderCopy(ren, menu_tex, NULL, NULL);
+            SDL_RenderPresent(ren);
+            if (strcmp(shown_title, GAME_TITLE " - Paused")) { SDL_SetWindowTitle(win, GAME_TITLE " - Paused"); strcpy(shown_title, GAME_TITLE " - Paused"); }
+            next += (Uint64)(frame_s * freq);
+            Uint64 now = SDL_GetPerformanceCounter();
+            if (now < next) SDL_Delay((Uint32)((next - now) * 1000 / freq));
+            else next = now;
+            continue;
+        }
         if (menu_is_open()) {
             if (ww != ui_w || wh != ui_h) {     /* resized or fullscreen toggled: rebuild the backdrop */
                 int win_w, win_h;
@@ -1177,7 +1221,7 @@ int main(int argc, char **argv) {
             } else if (!rewinding) {
                 /* Fast-forward: while its key is held, two to four game frames per frame
                  * (the last one's sound is heard). */
-                int runs = (GAME_REWIND && input_held(IN_FAST, keys, pads_active())) ? settings.fast_speed + 2 : 1;
+                int runs = (GAME_REWIND && settings.rewind && input_held(IN_FAST, keys, pads_active())) ? settings.fast_speed + 2 : 1;
                 for (int r = 0; r < runs; r++) {
                     /* Two controllers and no AI partner: the first is player 1's, the second
                      * player 2's. Otherwise player 1 plays on whichever was used last. Players

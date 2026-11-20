@@ -13,7 +13,7 @@
     "widescreen": false,
     "launcher": false,
     "sixButton": true,
-    "rewind": false
+    "rewind": true
   },
   "sram": {
     "present": false,

@@ -49,10 +49,16 @@ static void close_id(SDL_JoystickID id) {
 static const char *extra_mappings[] = {
     /* 8BitDo M30 2.4g (the Sega-licensed 6-button Mega Drive/Genesis pad), Linux, as
      * SDL_JoystickGetGUIDString() reports it over this machine's USB dongle driver. Raw
-     * button indices were read directly off this pad with a one-at-a-time test
-     * (SDL_JOYBUTTONDOWN, see decomp/NOTES.md-style investigation in chat), confirmed twice:
-     * A=1, B=5, C=3, X=2, Y=0, Z=4, Start=9; the D-pad reports as two full-deflection axes
-     * (0=X, 1=Y), not a hat.
+     * button indices, confirmed with a small test app that lights up a labelled box for
+     * whatever the mapping below says is held, so there is no room for a mislabelled
+     * button or a misread capture order (both bit us earlier before this app existed):
+     * A=2, B=1, C=5, X=3, Y=0, Z=4, Start=9; the D-pad reports as two full-deflection axes
+     * (0=X, 1=Y), not a hat. Past the six main buttons, the pad's own manual
+     * (download.8bitdo.com/Manual/Controller/M30/M30_Manual.pdf) shows a small L and R
+     * (not full-travel triggers), a "-"/select/mode button and a star button; confirmed
+     * on this unit: L=b6, R=b7, "-"=b8 (also what the manual separately draws as a heart
+     * icon: same physical button, this pad's firmware just doesn't tell the two apart),
+     * star sends no event at all (most likely reserved for power/pairing).
      *
      * This mirrors, button for button, what this same pad's *other* identity (plugged in
      * over USB cable, where it reports as a generic "Xbox 360 Controller") gives for free
@@ -62,9 +68,9 @@ static const char *extra_mappings[] = {
      * an analog trigger is normal SDL mapping syntax). input.c's GAME_SIX_BUTTON
      * default_buttons[] expects exactly this layout, so both connections play the same. */
     "03001a0da30c00002400000011010000,8BitDo M30 2.4g,"
-    "a:b1,b:b5,righttrigger:b3,x:b2,y:b0,rightshoulder:b4,start:b9,"
+    "a:b2,b:b1,righttrigger:b5,x:b3,y:b0,rightshoulder:b4,start:b9,"
     "dpup:-a1,dpdown:+a1,dpleft:-a0,dpright:+a0,"
-    "leftshoulder:b6,back:b7,leftstick:b8,platform:Linux,",
+    "leftshoulder:b6,rightstick:b7,back:b8,platform:Linux,",
 };
 
 void pads_init(void) {

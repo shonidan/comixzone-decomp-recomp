@@ -122,6 +122,7 @@ add_executable(${GAME_EXE} WIN32
   runtime/src/music.c
   runtime/src/decoders.c
   runtime/src/stubs.c
+  runtime/src/pause.c
   ${FONTS_C}
   runtime/src/third.c
   runtime/src/sound.cpp)

@@ -30,17 +30,16 @@ static const char *const ini_names[IN_COUNT] = {
 };
 
 #if GAME_SIX_BUTTON
-/* Comix Zone's own control-reading code (not our hardware emulation -- io.c's six-button
- * protocol trace confirms the pad delivers clean, separate A/B/C/X bits) reads its A, B, C
- * and X hardware lines one step rotated from their labels: what the pad calls A reads to
- * the game as X, B reads as A, C reads as B, and X reads as C (confirmed directly by
- * testing, each of the four in turn; Y and Z are not part of this and read correctly). This
- * compensates on the way out, so the pad's own A, B, C, X labels do what they say again.
+/* The straight mapping: Genesis A/B/C/X/Y/Z read from the pad's own, matching labels. (An
+ * earlier version of this rotated A/B/C/X by one step, to compensate for a wrong raw
+ * button index in pads.c's 8BitDo M30 mapping that made it look like Comix Zone itself
+ * read those four lines rotated; fixed at the source once a small test app could show,
+ * live, which labelled button lights up for each -- see pads.c.)
  * Only for a controller io.c's six-button protocol is on for (pads_active_six_button()):
- * any other pad reads as an ordinary 3-button one, where this rotation doesn't apply and
- * X, Y and Z aren't read at all. */
+ * any other pad reads as an ordinary 3-button one (pad_bit_three below), where X, Y and Z
+ * aren't read at all. */
 static const uint16_t pad_bit_six[IN_COUNT] = {
-    PAD_UP, PAD_DOWN, PAD_LEFT, PAD_RIGHT, PAD_B, PAD_C, PAD_X, PAD_START, PAD_A, PAD_Y, PAD_Z, 0, 0, 0,
+    PAD_UP, PAD_DOWN, PAD_LEFT, PAD_RIGHT, PAD_A, PAD_B, PAD_C, PAD_START, PAD_X, PAD_Y, PAD_Z, 0, 0, 0,
 };
 static const uint16_t pad_bit_three[IN_COUNT] = {
     PAD_UP, PAD_DOWN, PAD_LEFT, PAD_RIGHT, PAD_A, PAD_B, PAD_C, PAD_START, 0, 0, 0, 0, 0, 0,
@@ -74,7 +73,7 @@ static const int default_buttons_six[IN_COUNT] = {
     SDL_CONTROLLER_BUTTON_DPAD_LEFT, SDL_CONTROLLER_BUTTON_DPAD_RIGHT,
     SDL_CONTROLLER_BUTTON_A, SDL_CONTROLLER_BUTTON_B, INPUT_TRIGGER_RIGHT, SDL_CONTROLLER_BUTTON_START,
     SDL_CONTROLLER_BUTTON_X, SDL_CONTROLLER_BUTTON_Y, SDL_CONTROLLER_BUTTON_RIGHTSHOULDER,
-    SDL_CONTROLLER_BUTTON_LEFTSHOULDER, SDL_CONTROLLER_BUTTON_BACK, SDL_CONTROLLER_BUTTON_LEFTSTICK,
+    SDL_CONTROLLER_BUTTON_LEFTSHOULDER, SDL_CONTROLLER_BUTTON_BACK, SDL_CONTROLLER_BUTTON_RIGHTSTICK,
 };
 static const int default_buttons_three[IN_COUNT] = {
     SDL_CONTROLLER_BUTTON_DPAD_UP, SDL_CONTROLLER_BUTTON_DPAD_DOWN,
@@ -175,22 +174,35 @@ void input_ini_save(FILE *f) {
     }
 }
 
+/* A, B, C, Rewind, Menu and Fast's bindings have to depend on which pad is plugged in right
+ * now (pads_active_six_button(), see pad_bit above): settings_load() computes defaults
+ * before any pad is open (and, with more than one connected, whichever enumerates first
+ * there may not be the one actually in the player's hands), so whatever got saved into
+ * settings.bind_pad at that point is never a safe answer -- looked up live here instead for
+ * these six, every time, rather than trusted from a settings.ini snapshot. */
+static int live_bind(int action, int bind) {
+#if GAME_SIX_BUTTON
+    if (action == IN_A || action == IN_B || action == IN_C ||
+        action == IN_REWIND || action == IN_MENU || action == IN_FAST) {
+        static const int six[6] = { SDL_CONTROLLER_BUTTON_A, SDL_CONTROLLER_BUTTON_B, INPUT_TRIGGER_RIGHT,
+                                     SDL_CONTROLLER_BUTTON_LEFTSHOULDER, SDL_CONTROLLER_BUTTON_BACK,
+                                     SDL_CONTROLLER_BUTTON_RIGHTSTICK };
+        static const int three[6] = { SDL_CONTROLLER_BUTTON_X, SDL_CONTROLLER_BUTTON_A, SDL_CONTROLLER_BUTTON_B,
+                                       SDL_CONTROLLER_BUTTON_LEFTSHOULDER, SDL_CONTROLLER_BUTTON_BACK,
+                                       SDL_CONTROLLER_BUTTON_RIGHTSHOULDER };
+        int i = action == IN_A ? 0 : action == IN_B ? 1 : action == IN_C ? 2
+              : action == IN_REWIND ? 3 : action == IN_MENU ? 4 : 5;
+        return (pads_active_six_button() ? six : three)[i];
+    }
+#endif
+    return bind;
+}
+
 static bool held(int player, int action, const Uint8 *keys, SDL_GameController *pad) {
     int k = keys_of(player)[action];
     if (keys && k > 0 && k < SDL_NUM_SCANCODES && keys[k]) return true;
     if (!pad) return false;
-    int bind = buttons_of(player)[action];
-#if GAME_SIX_BUTTON
-    /* A, B and C's binding has to depend on which pad is plugged in right now
-     * (pads_active_six_button(), see pad_bit above): settings_load() computes defaults
-     * before any pad is open, so whatever got saved into settings.bind_pad at that point
-     * is never the right answer, and is looked up live here instead for these three. */
-    if (action == IN_A || action == IN_B || action == IN_C) {
-        static const int six[3] = { SDL_CONTROLLER_BUTTON_A, SDL_CONTROLLER_BUTTON_B, INPUT_TRIGGER_RIGHT };
-        static const int three[3] = { SDL_CONTROLLER_BUTTON_X, SDL_CONTROLLER_BUTTON_A, SDL_CONTROLLER_BUTTON_B };
-        bind = (pads_active_six_button() ? six : three)[action - IN_A];
-    }
-#endif
+    int bind = live_bind(action, buttons_of(player)[action]);
     SDL_GameControllerAxis a = trigger_axis(bind);
     if (a != SDL_CONTROLLER_AXIS_INVALID) return SDL_GameControllerGetAxis(pad, a) > TRIGGER_DOWN;
     return SDL_GameControllerGetButton(pad, (SDL_GameControllerButton)bind);
@@ -221,8 +233,9 @@ int input_trigger_pressed(const SDL_Event *e) {
 
 bool input_event_is(int action, const SDL_Event *e) {
     if (e->type == SDL_KEYDOWN) return !e->key.repeat && (int)e->key.keysym.scancode == settings.bind_key[action];
-    if (e->type == SDL_CONTROLLERBUTTONDOWN) return e->cbutton.button == settings.bind_pad[action];
-    if (e->type == SDL_CONTROLLERAXISMOTION) { int t = input_trigger_pressed(e); return t >= 0 && t == settings.bind_pad[action]; }
+    int bind = live_bind(action, settings.bind_pad[action]);
+    if (e->type == SDL_CONTROLLERBUTTONDOWN) return e->cbutton.button == bind;
+    if (e->type == SDL_CONTROLLERAXISMOTION) { int t = input_trigger_pressed(e); return t >= 0 && t == bind; }
     return false;
 }
 

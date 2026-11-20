@@ -1,0 +1,2136 @@
+name: alteredbeast
+# Altered Beast (USA, Europe) REV02 — Sega Genesis / Mega Drive
+# SHA-1 verified against original ROM
+sha1: "38945360D824D2FB9535B4FD7F25B9AA9B32F019"
+
+options:
+  platform: genesis
+  region: ntsc
+  basename: alteredbeast
+  base_path: ./out/alteredbeast
+  target_path: "../Altered Beast (USA, Europe).md"
+  asm_path: asm
+  asset_path: assets
+  build_path: build
+  symbols_path: ./alteredbeast_symbols.txt
+  charmap_path: ./alteredbeast_sjis.tbl
+  header_output: true
+  incbin: true
+
+# ROM: 512 KB original (valid range $000000–$07FFFF)
+segments:
+
+  # ── ROM Header ─────────────────────────────────────────────────────────────
+  - name: header
+    type: header
+    start: 0x000000
+    end:   0x000200
+
+  # ── Main 68000 Code ─────────────────────────────────────────────────────────
+  - name: loc_000200
+    type: m68k
+    start: 0x000200
+    end:   0x00020C
+
+  - name: loc_00020C
+    type: m68k
+    start: 0x00020C
+    end:   0x000280
+    hints:
+      - offset: 0x000010
+        type: text
+        length: 4
+        label: string_000210
+      - offset: 0x000016
+        type: text
+        length: 4
+        label: string_000216
+      - offset: 0x00001C
+        type: text
+        length: 4
+        label: string_00021C
+      - offset: 0x000022
+        type: text
+        length: 4
+        label: string_000222
+      - offset: 0x000028
+        type: text
+        length: 4
+        label: string_000228
+      - offset: 0x00002E
+        type: text
+        length: 4
+        label: string_00022E
+
+  - name: loc_000280
+    type: m68k
+    start: 0x000280
+    end:   0x000354
+
+  - name: loc_000354
+    type: m68k
+    start: 0x000354
+    end:   0x00063A
+
+  - name: loc_00063A
+    type: m68k
+    start: 0x00063A
+    end:   0x00067A
+
+  - name: loc_00067A
+    type: m68k
+    start: 0x00067A
+    end:   0x000696
+
+  - name: loc_000696
+    type: m68k
+    start: 0x000696
+    end:   0x0006C8
+
+  - name: loc_0006C8
+    type: m68k
+    start: 0x0006C8
+    end:   0x00075A
+
+  - name: loc_00075A
+    type: m68k
+    start: 0x00075A
+    end:   0x0007AE
+
+  - name: loc_0007AE
+    type: m68k
+    start: 0x0007AE
+    end:   0x0007D2
+
+  - name: loc_0007D2
+    type: m68k
+    start: 0x0007D2
+    end:   0x000A48
+
+  - name: loc_000A48 
+    type: m68k
+    start: 0x000A48
+    end:   0x000C2C
+
+  - name: pal_00000C2C
+    type: bin
+    start: 0x00000C2C
+    end:   0x00000C3A
+    subdir: palettes
+
+  - name: pal_00000C3A
+    type: bin
+    start: 0x00000C3A
+    end:   0x00000C46
+    subdir: palettes
+
+  - name: loc_000C46
+    type: m68k
+    start: 0x000C46
+    end:   0x000CBA
+
+  - name: loc_000CBC
+    type: m68k
+    start: 0x000CBC
+    end:   0x000D24
+    
+  - name: loc_000D24
+    type: m68k
+    start: 0x000D24
+    end:   0x0010C6
+    hints:
+      - offset: 0x0302
+        type: data_byte
+        length: 160
+        label: byte_001026
+
+  - name: pal_000010C6
+    type: bin
+    start: 0x000010C6
+    end:   0x000010D0
+    subdir: palettes
+
+  - name: pal_000010D0
+    type: bin
+    start: 0x000010D0
+    end:   0x000010DA
+    subdir: palettes
+
+  - name: loc_0010DA
+    type: m68k
+    start: 0x0010DA
+    end:   0x00117A
+
+  - name: loc_00117A
+    type: m68k
+    start: 0x001180
+    end:   0x0012FA
+
+  - name: loc_0012FA
+    type: m68k
+    start: 0x0012FA
+    end:   0x001560
+
+  - name: loc_001560
+    type: m68k
+    start: 0x001560
+    end:   0x0015BC
+
+  - name: pal_000015BC
+    type: bin
+    start: 0x000015BC
+    end:   0x000015CA
+    subdir: palettes
+
+  - name: pal_000015CA
+    type: bin
+    start: 0x000015CA
+    end:   0x000015D8
+    subdir: palettes
+
+  - name: pal_000015D8
+    type: bin
+    start: 0x000015D8
+    end:   0x000015E6
+    subdir: palettes
+
+  - name: pal_000015E6
+    type: bin
+    start: 0x000015E6
+    end:   0x000015F4
+    subdir: palettes
+
+  - name: pal_000015F4
+    type: bin
+    start: 0x000015F4
+    end:   0x00001602
+    subdir: palettes
+
+  - name: pal_00001602
+    type: bin
+    start: 0x00001602
+    end:   0x00001610
+    subdir: palettes
+
+  - name: loc_001610
+    type: m68k
+    start: 0x001610
+    end:   0x001A62    
+
+  - name: loc_001A62
+    type: m68k
+    start: 0x001A62
+    end:   0x001B56
+    hints:
+      - offset: 0x000D4
+        type: ptr_table
+        length: 32
+        label: ptr_001B36
+
+  - name: pal_00001B56
+    type: bin
+    start: 0x00001B56
+    end:   0x00001B66
+    subdir: palettes
+
+  - name: pal_00001B66
+    type: bin
+    start: 0x00001B66
+    end:   0x00001B76
+    subdir: palettes
+
+  - name: pal_00001B76
+    type: bin
+    start: 0x00001B76
+    end:   0x00001B86
+    subdir: palettes
+
+  - name: pal_00001B86
+    type: bin
+    start: 0x00001B86
+    end:   0x00001B96
+    subdir: palettes
+
+  - name: pal_00001B96
+    type: bin
+    start: 0x00001B96
+    end:   0x00001BA6
+    subdir: palettes
+
+  - name: pal_00001BA6
+    type: bin
+    start: 0x00001BA6
+    end:   0x00001BB6
+    subdir: palettes
+
+  - name: pal_00001BB6
+    type: bin
+    start: 0x00001BB6
+    end:   0x00001BC6
+    subdir: palettes
+
+  - name: pal_00001BC6
+    type: bin
+    start: 0x00001BC6
+    end:   0x00001BD6
+    subdir: palettes
+
+  - name: pal_00001BD6
+    type: bin
+    start: 0x00001BD6
+    end:   0x00001BE6
+    subdir: palettes
+
+  - name: loc_001BE6
+    type: m68k
+    start: 0x001BE6
+    end:   0x0021D4
+
+  - name: pal_000021D4
+    type: bin
+    start: 0x000021D4
+    end:   0x000021F2
+    subdir: palettes
+
+  - name: pal_000021F2
+    type: bin
+    start: 0x000021F2
+    end:   0x00002210
+    subdir: palettes
+
+  - name: pal_00002210
+    type: bin
+    start: 0x00002210
+    end:   0x0000222E
+    subdir: palettes
+
+  - name: pal_0000222E
+    type: bin
+    start: 0x0000222E
+    end:   0x0000224C
+    subdir: palettes
+
+  - name: loc_00224C
+    type: m68k
+    start: 0x00224C
+    end:   0x00224E
+
+  - name: loc_00224E
+    type: m68k
+    start: 0x00224E
+    end:   0x002374
+
+  - name: loc_002374
+    type: m68k
+    start: 0x002374
+    end:   0x0023B2
+
+  - name: loc_0023B2
+    type: m68k
+    start: 0x0023B2
+    end:   0x00253C
+
+  - name: loc_00253C
+    type: m68k
+    start: 0x00253C
+    end:   0x0025E0
+
+  - name: loc_0025E0
+    type: m68k
+    start: 0x0025E0
+    end:   0x002638
+
+  - name: loc_002638
+    type: m68k
+    start: 0x002638
+    end:   0x00301E
+
+  - name: loc_00301E
+    type: m68k
+    start: 0x00301E
+    end:   0x003020
+
+  - name: loc_003020
+    type: m68k
+    start: 0x003020
+    end:   0x003168
+
+  - name: loc_003168
+    type: m68k
+    start: 0x003168
+    end:   0x003240
+
+  - name: loc_003240
+    type: m68k
+    start: 0x003240
+    end:   0x0033EA
+
+  - name: loc_0033EA
+    type: m68k
+    start: 0x0033EA
+    end:   0x003B48
+
+  - name: loc_003B48
+    type: m68k
+    start: 0x003B48
+    end:   0x003B52
+
+  - name: loc_003B52
+    type: m68k
+    start: 0x003B52
+    end:   0x003BB8
+
+  - name: loc_003BB8
+    type: m68k
+    start: 0x003BB8
+    end:   0x003BFE
+
+  - name: loc_003BFE
+    type: m68k
+    start: 0x003BFE
+    end:   0x003C00
+
+  - name: loc_003C00
+    type: m68k
+    start: 0x003C00
+    end:   0x003C50
+
+  - name: loc_003C50
+    type: m68k
+    start: 0x003C50
+    end:   0x003C52
+
+  - name: loc_003C52
+    type: m68k
+    start: 0x003C52
+    end:   0x003C7E
+
+  - name: loc_003C7E
+    type: m68k
+    start: 0x003C7E
+    end:   0x003C9C
+
+  - name: loc_003C9C
+    type: m68k
+    start: 0x003C9C
+    end:   0x003CA6
+
+  - name: loc_003CA6
+    type: m68k
+    start: 0x003CA6
+    end:   0x003CDA
+
+  - name: loc_003CDA
+    type: m68k
+    start: 0x003CDA
+    end:   0x003CE4
+
+  - name: loc_003CE4
+    type: m68k
+    start: 0x003CE4
+    end:   0x003D1C
+
+  - name: loc_003D1C
+    type: m68k
+    start: 0x003D1C
+    end:   0x003D1E
+
+  - name: loc_003D1E
+    type: m68k
+    start: 0x003D1E
+    end:   0x003DD2
+
+  - name: loc_003DD2
+    type: m68k
+    start: 0x003DD2
+    end:   0x003FDC
+
+  - name: pal_00003FDC
+    type: bin
+    start: 0x00003FDC
+    end:   0x00003FF2
+    subdir: palettes
+
+  - name: pal_00003FF2
+    type: bin
+    start: 0x00003FF2
+    end:   0x00004008
+    subdir: palettes
+
+  - name: pal_00004008
+    type: bin
+    start: 0x00004008
+    end:   0x0000401E
+    subdir: palettes
+
+  - name: pal_0000401E
+    type: bin
+    start: 0x0000401E
+    end:   0x00004034
+    subdir: palettes
+
+  - name: pal_00004034
+    type: bin
+    start: 0x00004034
+    end:   0x00004048
+    subdir: palettes
+
+  - name: pal_00004048
+    type: bin
+    start: 0x00004048
+    end:   0x0000405C
+    subdir: palettes
+
+  - name: pal_0000405C
+    type: bin
+    start: 0x0000405C
+    end:   0x00004070
+    subdir: palettes
+
+  - name: pal_00004070
+    type: bin
+    start: 0x00004070
+    end:   0x00004082
+    subdir: palettes
+
+  - name: pal_00004082
+    type: bin
+    start: 0x00004082
+    end:   0x00004094
+    subdir: palettes
+
+  - name: pal_00004094
+    type: bin
+    start: 0x00004094
+    end:   0x000040A8
+    subdir: palettes
+
+  - name: pal_000040A8
+    type: bin
+    start: 0x000040A8
+    end:   0x000040BE
+    subdir: palettes
+
+  - name: pal_000040BE
+    type: bin
+    start: 0x000040BE
+    end:   0x000040D4
+    subdir: palettes
+
+  - name: loc_0040D4
+    type: m68k
+    start: 0x0040D4
+    end:   0x0040EE
+
+  - name: loc_0040EE
+    type: m68k
+    start: 0x0040EE
+    end:   0x004120
+
+  - name: loc_004120
+    type: m68k
+    start: 0x004120
+    end:   0x004180
+
+  - name: loc_004180
+    type: m68k
+    start: 0x004180
+    end:   0x00419A
+
+  - name: loc_00419A
+    type: m68k
+    start: 0x00419A
+    end:   0x00419C
+
+  - name: loc_00419C
+    type: m68k
+    start: 0x00419C
+    end:   0x0041D2
+
+  - name: loc_0041D2
+    type: m68k
+    start: 0x0041D2
+    end:   0x0041D4
+
+  - name: loc_0041D4
+    type: m68k
+    start: 0x0041D4
+    end:   0x00426C
+
+  - name: loc_00426C
+    type: m68k
+    start: 0x00426C
+    end:   0x004364
+
+  - name: loc_004364
+    type: m68k
+    start: 0x004364
+    end:   0x004388
+
+  - name: loc_004388
+    type: m68k
+    start: 0x004388
+    end:   0x0044FC
+
+  - name: loc_0044FC
+    type: m68k
+    start: 0x0044FC
+    end:   0x0045BE
+
+  - name: loc_0045BE
+    type: m68k
+    start: 0x0045BE
+    end:   0x0045CC
+
+  - name: loc_0045CC
+    type: m68k
+    start: 0x0045CC
+    end:   0x0045EE
+
+  - name: loc_0045EE
+    type: m68k
+    start: 0x0045EE
+    end:   0x0045F8
+
+  - name: loc_0045F8
+    type: m68k
+    start: 0x0045F8
+    end:   0x004606
+
+  - name: loc_004606
+    type: m68k
+    start: 0x004606
+    end:   0x004616
+
+  - name: loc_004616
+    type: m68k
+    start: 0x004616
+    end:   0x004656
+
+  - name: loc_004656
+    type: m68k
+    start: 0x004656
+    end:   0x00467A
+
+  - name: loc_00467A
+    type: m68k
+    start: 0x00467A
+    end:   0x0046BC
+
+  - name: loc_0046BC
+    type: m68k
+    start: 0x0046BC
+    end:   0x0046DC
+
+  - name: loc_0046DC
+    type: m68k
+    start: 0x0046DC
+    end:   0x0046E4
+
+  - name: loc_0046E4
+    type: m68k
+    start: 0x0046E4
+    end:   0x0046F4
+
+  - name: loc_0046F4
+    type: m68k
+    start: 0x0046F4
+    end:   0x0046F6
+
+  - name: loc_0046F6
+    type: m68k
+    start: 0x0046F6
+    end:   0x004764
+
+  - name: loc_004764
+    type: m68k
+    start: 0x004764
+    end:   0x0047B0
+
+  - name: loc_0047B0
+    type: m68k
+    start: 0x0047B0
+    end:   0x0047B2
+    
+  - name: loc_0047B2
+    type: m68k
+    start: 0x0047B2
+    end:   0x0047B6
+
+  - name: loc_0047B6
+    type: m68k
+    start: 0x0047B6
+    end:   0x0047CC
+
+  - name: loc_0047CC
+    type: m68k
+    start: 0x0047CC
+    end:   0x0047F0
+
+  - name: loc_0047F0
+    type: m68k
+    start: 0x0047F0
+    end:   0x00480A
+
+  - name: loc_00480A
+    type: m68k
+    start: 0x00480A
+    end:   0x004824
+
+  - name: loc_004824
+    type: m68k
+    start: 0x004824
+    end:   0x00483A
+
+  - name: loc_00483A
+    type: m68k
+    start: 0x00483A
+    end:   0x0048C0
+
+  - name: loc_0048C0
+    type: m68k
+    start: 0x0048C0
+    end:   0x0048C2
+
+  - name: loc_0048C2
+    type: m68k
+    start: 0x0048C2
+    end:   0x0048F2
+
+  - name: loc_0048F2
+    type: m68k
+    start: 0x0048F2
+    end:   0x0048F4
+
+  - name: loc_0048F4
+    type: m68k
+    start: 0x0048F4
+    end:   0x00491C
+
+  - name: loc_00491C
+    type: m68k
+    start: 0x00491C
+    end:   0x00499A
+
+  - name: loc_00499A
+    type: m68k
+    start: 0x00499A
+    end:   0x004A8E
+
+  - name: loc_004A8E
+    type: m68k
+    start: 0x004A8E
+    end:   0x004A9A
+
+  - name: loc_004A9A
+    type: m68k
+    start: 0x004A9A
+    end:   0x004AA8
+
+  - name: loc_004AA8
+    type: m68k
+    start: 0x004AA8
+    end:   0x004AB6
+
+  - name: loc_004AB6
+    type: m68k
+    start: 0x004AB6
+    end:   0x004AC6
+    
+  - name: loc_004AC6
+    type: m68k
+    start: 0x004AC6
+    end:   0x004AF2
+
+  - name: loc_004AF2
+    type: m68k
+    start: 0x004AF2
+    end:   0x004B1A
+
+  - name: loc_004B1A
+    type: m68k
+    start: 0x004B1A
+    end:   0x004B1C
+
+  - name: loc_004B1C
+    type: m68k
+    start: 0x004B1C
+    end:   0x004B44
+
+  - name: loc_004B44
+    type: m68k
+    start: 0x004B44
+    end:   0x004B58
+
+  - name: loc_004B58
+    type: m68k
+    start: 0x004B58
+    end:   0x004B6E
+
+  - name: loc_004B6E
+    type: m68k
+    start: 0x004B6E
+    end:   0x004B70
+
+  - name: loc_004B70
+    type: m68k
+    start: 0x004B70
+    end:   0x004BB6
+
+  - name: loc_004BB6
+    type: m68k
+    start: 0x004BB6
+    end:   0x004BF0
+
+  - name: loc_004BF0
+    type: m68k
+    start: 0x004BF0
+    end:   0x004C02
+
+  - name: loc_004C02
+    type: m68k
+    start: 0x004C02
+    end:   0x004C32
+
+  - name: loc_004C32
+    type: m68k
+    start: 0x004C32
+    end:   0x004C7C
+
+  - name: loc_004C7C
+    type: m68k
+    start: 0x004C7C
+    end:   0x004CBA
+
+  - name: loc_004CBA
+    type: m68k
+    start: 0x004CBA
+    end:   0x004CBC
+
+  - name: loc_004CBC
+    type: m68k
+    start: 0x004CBC
+    end:   0x005132
+
+  - name: loc_005132
+    type: m68k
+    start: 0x005132
+    end:   0x00532C
+
+  - name: loc_00532C
+    type: m68k
+    start: 0x00532C
+    end:   0x005464
+
+  - name: loc_005464
+    type: m68k
+    start: 0x005464
+    end:   0x005718
+
+  - name: loc_005718
+    type: m68k
+    start: 0x005718
+    end:   0x005B22
+
+  - name: loc_005B22
+    type: m68k
+    start: 0x005B22
+    end:   0x005D10
+
+  - name: loc_005D10
+    type: m68k
+    start: 0x005D10
+    end:   0x005EA6
+
+  - name: loc_005EA6
+    type: m68k
+    start: 0x005EA6
+    end:   0x006076
+
+  - name: loc_006076
+    type: m68k
+    start: 0x006076
+    end:   0x006160
+
+  - name: loc_006160
+    type: m68k
+    start: 0x006160
+    end:   0x00618E
+
+  - name: pal_0000618E
+    type: bin
+    start: 0x0000618E
+    end:   0x0000619A
+    subdir: palettes
+
+  - name: loc_00619A
+    type: m68k
+    start: 0x00619A
+    end:   0x00625A
+
+  - name: loc_00625A
+    type: m68k
+    start: 0x00625A
+    end:   0x00627A
+
+  - name: loc_00627A
+    type: m68k
+    start: 0x00627A
+    end:   0x0062B0
+
+  - name: loc_0062B0
+    type: m68k
+    start: 0x0062B0
+    end:   0x0062BC
+
+  - name: loc_0062BC
+    type: m68k
+    start: 0x0062BC
+    end:   0x0062DA
+
+  - name: loc_0062DA
+    type: m68k
+    start: 0x0062DA
+    end:   0x00637C
+
+  - name: loc_00637C
+    type: m68k
+    start: 0x00637C
+    end:   0x00642E
+
+  - name: loc_00642E
+    type: m68k
+    start: 0x00642E
+    end:   0x006430
+
+  - name: loc_006430
+    type: m68k
+    start: 0x006430
+    end:   0x00645E
+
+  - name: loc_00645E
+    type: m68k
+    start: 0x00645E
+    end:   0x0067CC
+
+  - name: loc_0067CC
+    type: m68k
+    start: 0x0067CC
+    end:   0x0068D0
+
+  - name: loc_0068D0
+    type: m68k
+    start: 0x0068D0
+    end:   0x00698A
+
+  - name: loc_00698A
+    type: m68k
+    start: 0x00698A
+    end:   0x006A9C
+
+  - name: loc_006A9C
+    type: m68k
+    start: 0x006A9C
+    end:   0x006AD2
+
+  - name: loc_006AD2
+    type: m68k
+    start: 0x006AD2
+    end:   0x006D1E
+
+  - name: loc_006D1E
+    type: m68k
+    start: 0x006D1E
+    end:   0x006D56
+    
+  - name: loc_006D56
+    type: m68k
+    start: 0x006D56
+    end:   0x006E66
+
+  - name: loc_006E66
+    type: m68k
+    start: 0x006E66
+    end:   0x006E78
+
+  - name: loc_006E78
+    type: m68k
+    start: 0x006E78
+    end:   0x007098
+
+  - name: loc_007098
+    type: m68k
+    start: 0x007098
+    end:   0x00711C
+
+  - name: loc_00711C
+    type: m68k
+    start: 0x00711C
+    end:   0x00747A
+    
+  - name: loc_00747A
+    type: m68k
+    start: 0x00747A
+    end:   0x0077B0
+
+  - name: loc_0077B0
+    type: m68k
+    start: 0x0077B0
+    end:   0x008000
+
+  - name: loc_008000
+    type: m68k
+    start: 0x008000
+    end:   0x008092
+
+  - name: loc_008092
+    type: m68k
+    start: 0x008092
+    end:   0x008642
+
+  - name: loc_008642
+    type: m68k
+    start: 0x008642
+    end:   0x0089B8
+
+  - name: loc_0089B8
+    type: m68k
+    start: 0x0089B8
+    end:   0x008D16
+
+  - name: loc_008D16
+    type: m68k
+    start: 0x008D16
+    end:   0x008D84
+
+  - name: loc_008D84
+    type: m68k
+    start: 0x008D84
+    end:   0x008DC8
+
+  - name: loc_008DC8
+    type: m68k
+    start: 0x008DC8
+    end:   0x008E40
+
+  - name: loc_008E40
+    type: m68k
+    start: 0x008E40
+    end:   0x008EBE
+
+  - name: pal_00008EBE
+    type: bin
+    start: 0x00008EBE
+    end:   0x00008ECE
+    subdir: palettes
+
+  - name: pal_00008ECE
+    type: bin
+    start: 0x00008ECE
+    end:   0x00008EDC
+    subdir: palettes
+
+  - name: pal_00008EDC
+    type: bin
+    start: 0x00008EDC
+    end:   0x00008EE8
+    subdir: palettes
+
+  - name: pal_00008EE8
+    type: bin
+    start: 0x00008EE8
+    end:   0x00008EF2
+    subdir: palettes
+
+  - name: pal_00008EF2
+    type: bin
+    start: 0x00008EF2
+    end:   0x00008EFA
+    subdir: palettes
+
+  - name: pal_00008EFA
+    type: bin
+    start: 0x00008EFA
+    end:   0x00008F00
+    subdir: palettes
+
+  - name: pal_00008F00
+    type: bin
+    start: 0x00008F00
+    end:   0x00008F04
+    subdir: palettes
+
+  - name: pal_00008F22
+    type: bin
+    start: 0x00008F22
+    end:   0x00008F32
+    subdir: palettes
+
+  - name: pal_00008F32
+    type: bin
+    start: 0x00008F32
+    end:   0x00008F42
+    subdir: palettes
+
+  - name: pal_00008F42
+    type: bin
+    start: 0x00008F42
+    end:   0x00008F52
+    subdir: palettes
+
+  - name: pal_00008F52
+    type: bin
+    start: 0x00008F52
+    end:   0x00008F62
+    subdir: palettes
+
+  - name: pal_00008F62
+    type: bin
+    start: 0x00008F62
+    end:   0x00008F72
+    subdir: palettes
+
+  - name: pal_00008F72
+    type: bin
+    start: 0x00008F72
+    end:   0x00008F82
+    subdir: palettes
+
+  - name: pal_00008F82
+    type: bin
+    start: 0x00008F82
+    end:   0x00008F92
+    subdir: palettes
+
+  - name: loc_008F92
+    type: m68k
+    start: 0x008F92
+    end:   0x0097C8
+
+  - name: loc_0097C8
+    type: m68k
+    start: 0x0097C8
+    end:   0x0097FC
+
+  - name: loc_0097FC
+    type: m68k
+    start: 0x0097FC
+    end:   0x009B4C
+
+  - name: loc_009B4C
+    type: m68k
+    start: 0x009B4C
+    end:   0x009B4E
+
+  - name: loc_009B4E
+    type: m68k
+    start: 0x009B4E
+    end:   0x009B6E
+
+  - name: loc_009B6E
+    type: m68k
+    start: 0x009B6E
+    end:   0x009D00
+
+  - name: pal_00009D00
+    type: bin
+    start: 0x00009D00
+    end:   0x00009D04
+    subdir: palettes
+
+  - name: pal_00009D04
+    type: bin
+    start: 0x00009D04
+    end:   0x00009D14
+    subdir: palettes
+
+  - name: pal_00009D14
+    type: bin
+    start: 0x00009D14
+    end:   0x00009D22
+    subdir: palettes
+
+  - name: pal_00009D22
+    type: bin
+    start: 0x00009D22
+    end:   0x00009D30
+    subdir: palettes
+
+  - name: pal_00009D30
+    type: bin
+    start: 0x00009D30
+    end:   0x00009D3E
+    subdir: palettes
+
+  - name: pal_00009D3E
+    type: bin
+    start: 0x00009D3E
+    end:   0x00009D4C
+    subdir: palettes
+
+  - name: pal_00009D4C
+    type: bin
+    start: 0x00009D4C
+    end:   0x00009D5A
+    subdir: palettes
+
+  - name: pal_00009D5A
+    type: bin
+    start: 0x00009D5A
+    end:   0x00009D68
+    subdir: palettes
+
+  - name: pal_00009D68
+    type: bin
+    start: 0x00009D68
+    end:   0x00009D76
+    subdir: palettes
+
+  - name: pal_00009D76
+    type: bin
+    start: 0x00009D76
+    end:   0x00009D7A
+    subdir: palettes
+
+  - name: pal_00009D7A
+    type: bin
+    start: 0x00009D7A
+    end:   0x00009D9C
+    subdir: palettes
+
+  - name: pal_00009D9C
+    type: bin
+    start: 0x00009D9C
+    end:   0x00009DB0
+    subdir: palettes
+
+  - name: pal_00009DB0
+    type: bin
+    start: 0x00009DB0
+    end:   0x00009DC2
+    subdir: palettes
+
+  - name: pal_00009DC2
+    type: bin
+    start: 0x00009DC2
+    end:   0x00009DD6
+    subdir: palettes
+
+  - name: pal_00009DD6
+    type: bin
+    start: 0x00009DD6
+    end:   0x00009DEA
+    subdir: palettes
+
+  - name: pal_00009F6C
+    type: bin
+    start: 0x00009F6C
+    end:   0x00009F94
+    subdir: palettes
+
+  - name: pal_00009F94
+    type: bin
+    start: 0x00009F94
+    end:   0x00009FB4
+    subdir: palettes
+
+  - name: loc_009F3E
+    type: m68k
+    start: 0x009FB4
+    end:   0x00A81C
+
+  - name: gfx_segalogo
+    type: gfx
+    start: 0x009FB4
+    end:   0x00A5D4
+    subdir: gfx
+
+  - name: main
+    type: m68k
+    start: 0x00A5D4
+    end:   0x00A760
+
+  - name: hblank
+    type: m68k
+    start: 0x00A760
+    end:   0x00A770
+
+  - name: vblank
+    type: m68k
+    start: 0x00A770
+    end:   0x00A81A
+
+  - name: loc_00A81A
+    type: m68k
+    start: 0x00A81A
+    end:   0x00A83A
+
+  - name: vdp_setup
+    type: m68k
+    start: 0x00A83A
+    end:   0x00A8B4
+    hints:
+      - offset: 0x0058
+        type: data_word
+        length: 34
+        label: vdpregs_A892
+
+  - name: loc_00A8B4
+    type: m68k
+    start: 0x00A8B4
+    end:   0x00A8E8
+
+  - name: loc_00A8E8
+    type: m68k
+    start: 0x00A8E8
+    end:   0x00AB86
+
+  - name: loc_00AB86
+    type: m68k
+    start: 0x00AB86
+    end:   0x00AD54
+
+  - name: pal_0000AD54
+    type: bin
+    start: 0x0000AD54
+    end:   0x0000AD5C
+    subdir: palettes
+
+  - name: pal_0000AD5C
+    type: bin
+    start: 0x0000AD5C
+    end:   0x0000AD64
+    subdir: palettes
+
+  - name: loc_00AD64
+    type: m68k
+    start: 0x00AD64
+    end:   0x00AE6A
+
+  - name: loc_00AE6A
+    type: m68k
+    start: 0x00AE6A
+    end:   0x00AF0C
+
+  - name: loc_00AF0C
+    type: m68k
+    start: 0x00AF0C
+    end:   0x00AFBA
+
+  - name: loc_00AFBA
+    type: m68k
+    start: 0x00AFBA
+    end:   0x00B036
+
+  - name: loc_00B036
+    type: m68k
+    start: 0x00B036
+    end:   0x00B058
+
+  - name: loc_00B058
+    type: m68k
+    start: 0x00B058
+    end:   0x00B076
+
+  - name: loc_00B076
+    type: m68k
+    start: 0x00B076
+    end:   0x00B1F8
+
+  - name: loc_00B1F8
+    type: m68k
+    start: 0x00B1F8
+    end:   0x00B214
+
+  - name: loc_00B214
+    type: m68k
+    start: 0x00B214
+    end:   0x00B230
+    
+  - name: loc_00B230
+    type: m68k
+    start: 0x00B230
+    end:   0x00B2D4
+
+  - name: loc_00B2D4
+    type: m68k
+    start: 0x00B2D4
+    end:   0x00B420
+
+  - name: loc_00B420
+    type: m68k
+    start: 0x00B420
+    end:   0x00B52A
+
+  - name: loc_00B52A
+    type: m68k
+    start: 0x00B52A
+    end:   0x00B7CE
+
+  - name: pal_0000B7CE
+    type: bin
+    start: 0x0000B7CE
+    end:   0x0000B7EC
+    subdir: palettes
+
+  - name: pal_0000B7EC
+    type: bin
+    start: 0x0000B7EC
+    end:   0x0000B80A
+    subdir: palettes
+
+  - name: pal_0000B80A
+    type: bin
+    start: 0x0000B80A
+    end:   0x0000B828
+    subdir: palettes
+
+  - name: pal_0000B828
+    type: bin
+    start: 0x0000B828
+    end:   0x0000B846
+    subdir: palettes
+
+  - name: pal_0000B846
+    type: bin
+    start: 0x0000B846
+    end:   0x0000B864
+    subdir: palettes
+
+  - name: pal_0000B864
+    type: bin
+    start: 0x0000B864
+    end:   0x0000B884
+    subdir: palettes
+
+  - name: pal_0000B884
+    type: bin
+    start: 0x0000B884
+    end:   0x0000B8A4
+    subdir: palettes
+
+  - name: pal_0000B8A4
+    type: bin
+    start: 0x0000B8A4
+    end:   0x0000B8C4
+    subdir: palettes
+
+  - name: pal_0000B8C4
+    type: bin
+    start: 0x0000B8C4
+    end:   0x0000B8E4
+    subdir: palettes
+
+  - name: pal_0000B8E4
+    type: bin
+    start: 0x0000B8E4
+    end:   0x0000B904
+    subdir: palettes
+
+  - name: pal_0000B904
+    type: bin
+    start: 0x0000B904
+    end:   0x0000B912
+    subdir: palettes
+
+  - name: pal_0000B912
+    type: bin
+    start: 0x0000B912
+    end:   0x0000B91E
+    subdir: palettes
+
+  - name: loc_00B91E
+    type: m68k
+    start: 0x00B91E
+    end:   0x00BCB4
+
+  - name: pal_0000BCB4
+    type: bin
+    start: 0x0000BCB4
+    end:   0x0000BCC4
+    subdir: palettes
+
+  - name: pal_0000BCC4
+    type: bin
+    start: 0x0000BCC4
+    end:   0x0000BD06
+    subdir: palettes
+
+  - name: pal_0000BD06
+    type: bin
+    start: 0x0000BD06
+    end:   0x0000BD10
+    subdir: palettes
+
+  - name: pal_0000BD10
+    type: bin
+    start: 0x0000BD10
+    end:   0x0000BD1A
+    subdir: palettes
+
+  - name: pal_0000BD1A
+    type: bin
+    start: 0x0000BD1A
+    end:   0x0000BD2A
+    subdir: palettes
+
+  - name: pal_0000BD2A
+    type: bin
+    start: 0x0000BD2A
+    end:   0x0000BD3A
+    subdir: palettes
+
+  - name: pal_0000BD3A
+    type: bin
+    start: 0x0000BD3A
+    end:   0x0000BD4A
+    subdir: palettes
+
+  - name: pal_0000BD4A
+    type: bin
+    start: 0x0000BD4A
+    end:   0x0000BD5A
+    subdir: palettes
+
+  - name: pal_0000BD5A
+    type: bin
+    start: 0x0000BD5A
+    end:   0x0000BD72
+    subdir: palettes
+
+  - name: gfx_copyright
+    type: gfx
+    start: 0x00BD72
+    end:   0x00BE12
+    subdir: gfx
+
+  - name: screen_soundtest
+    type: m68k
+    start: 0x00BE12
+    end:   0x00BF3E
+
+  - name: loc_00BF3E
+    type: m68k
+    start: 0x00BF3E
+    end:   0x00BF80
+    hints:
+      - offset: 0x000032
+        type: data_long
+        length: 4
+        label: long_00BF70
+      - offset: 0x000036
+        type: text
+        length: 10
+        label: string_00BF74
+      - offset: 0x000036
+        type: data_byte
+        length: 1
+        label: byte_00BF7E
+
+  - name: loc_00BF80
+    type: m68k
+    start: 0x00BF80
+    end:   0x00BFC8
+
+  - name: loc_00BFC8
+    type: m68k
+    start: 0x00BFC8
+    end:   0x00BFCC
+
+  - name: loc_00BFCC
+    type: m68k
+    start: 0x00BFCC
+    end:   0x00C0EE
+
+  - name: loc_00C0EE
+    type: m68k
+    start: 0x00C0EE
+    end:   0x00C1EC
+
+  - name: loc_00C1EC
+    type: m68k
+    start: 0x00C1EC
+    end:   0x00C26E
+
+  - name: pal_0000C26E
+    type: bin
+    start: 0x0000C26E
+    end:   0x0000C2A8
+    subdir: palettes
+
+  - name: loc_00C2A8
+    type: m68k
+    start: 0x00C2A8
+    end:   0x00C358
+
+  - name: NemDec_BuildCodeTable
+    type: m68k
+    start: 0x00C358
+    end:   0x00C3BA
+
+  - name: loc_00C3BA
+    type: m68k
+    start: 0x00C3BA
+    end:   0x00C3CA
+
+  - name: loc_00C3CA
+    type: m68k
+    start: 0x00C3CA
+    end:   0x00C5AA
+
+  - name: loc_00C5AA
+    type: m68k
+    start: 0x00C5AA
+    end:   0x00F200
+
+  - name: loc_00F200
+    type: m68k
+    start: 0x00F200
+    end:   0x00F214
+
+  - name: loc_00F214
+    type: m68k
+    start: 0x00F214
+    end:   0x010000
+
+  # ── Z80 Sound Driver block ($020000–$024000) ───────────────────────────────
+  # The $4000-byte block contains 7 drivers assembled with sjasmplus, in order:
+  #
+  #   ROM order   File                           Z80 org
+  #   ─────────── ────────────────────────────── ──────────
+  #   pcm_1       z80/pcm_driver/pcm_driver1.asm $0000
+  #   pcm_2       z80/pcm_driver/pcm_driver2.asm $0000
+  #   pcm_3       z80/pcm_driver/pcm_driver3.asm $0000
+  #   sounddriver z80/sounddriver.asm            $0000
+  #   pcm_6       z80/pcm_driver/pcm_driver6.asm $0000
+  #   pcm_4       z80/pcm_driver/pcm_driver4.asm $0000
+  #   pcm_5       z80/pcm_driver/pcm_driver5.asm $0000
+  #
+
+  # ── Z80 Sound Driver block ───────────────────────────────────────────────────
+  # 7 complete Z80 images stored sequentially in ROM (each even-aligned).
+  # Layout per driver: [Z80 code: org $0000] + [embedded PCM/music data]
+  # The 68k copies the selected driver to Z80 RAM ($A00000) on demand.
+  #
+  # ROM order:  pcm_driver1 · pcm_driver2 · pcm_driver3 · sounddriver
+  #             pcm_driver6 · pcm_driver4 · pcm_driver5
+
+  # - name: psg_test
+  #   type: psg
+  #   sample_rate: 44100
+  #   start: 0x00010000
+  #   end:   0x0001177E
+  #   subdir: audio/psg
+
+  - name: z80_pcm_driver1
+    type: z80
+    start: 0x0001376C
+    end:   0x000138EC
+    z80_org: 0x0000
+    subdir: z80/pcm_driver1
+
+  - name: pcm_power_up
+    type: pcm
+    sample_rate: 8000
+    start: 0x000138EC
+    end:   0x000153AC
+    subdir: audio/pcm
+
+  - name: z80_pcm_driver2
+    type: z80
+    start: 0x000153AC
+    end:   0x0001552C
+    z80_org: 0x0000
+    subdir: z80/pcm_driver2
+
+  - name: pcm_die_scream
+    type: pcm
+    sample_rate: 4000
+    start: 0x0001552C
+    end:   0x00017234
+    subdir: audio/pcm
+
+  - name: z80_pcm_driver3
+    type: z80
+    start: 0x00017234
+    end:   0x000173B4
+    z80_org: 0x0000
+    subdir: z80/pcm_driver3
+
+  - name: pcm_transform_scream
+    type: pcm
+    sample_rate: 4000
+    start: 0x000173B4
+    end:   0x0001919D
+    subdir: audio/pcm
+
+  - name: z80_sounddriver
+    type: z80
+    start: 0x0001919E
+    end:   0x0001AE54
+    z80_org: 0x0000
+    subdir: z80/sounddriver
+
+  - name: z80_pcm_driver6
+    type: z80
+    start: 0x0001AE54
+    end:   0x0001AFD4
+    z80_org: 0x0000
+    subdir: z80/pcm_driver6
+
+  - name: pcm_boss_laugh
+    type: pcm
+    sample_rate: 4000
+    start: 0x0001AFD4
+    end:   0x0001CDD5
+    subdir: audio/pcm
+
+  - name: z80_pcm_driver4
+    type: z80
+    start: 0x0001CDD6
+    end:   0x0001CF56
+    z80_org: 0x0000
+    subdir: z80/pcm_driver4
+
+  - name: pcm_rise_from_grave
+    type: pcm
+    sample_rate: 4000
+    start: 0x0001CF56
+    end:   0x0001ED57
+    subdir: audio/pcm
+
+  - name: z80_pcm_driver5
+    type: z80
+    start: 0x0001ED58
+    end:   0x0001EED8
+    z80_org: 0x0000
+    subdir: z80/pcm_driver5
+
+  - name: pcm_welcome_to_doom
+    type: pcm
+    sample_rate: 4000
+    start: 0x0001EED8
+    end:   0x00020A89
+    subdir: audio/pcm
+
+  # ── GFX ─────────────────────────────────────────────────────────────────────
+  - name: gfx_font
+    type: gfxcomp
+    compression: rlesegard
+    start: 0x00024000
+    end:   0x000244EF
+    subdir: gfx/segard
+
+  - name: pal_00027DB8
+    type: bin
+    start: 0x00027DB8
+    end:   0x00027DDA
+    subdir: palettes
+
+  - name: gfx_stage1_bg
+    type: gfxcomp
+    compression: rlesegard
+    start: 0x00027DDA
+    end:   0x0002ACC7
+    subdir: gfx/segard
+
+  - name: pal_0002AAC8
+    type: bin
+    start: 0x0002AAC8
+    end:   0x0002ACEA
+    subdir: palettes
+
+  - name: gfx_stage2_bg
+    type: gfxcomp
+    compression: rlesegard
+    start: 0x0002ACEA
+    end:   0x0002D187
+    subdir: gfx/segard
+
+  - name: pal_0002D188
+    type: bin
+    start: 0x0002D188
+    end:   0x0002D1AA
+    subdir: palettes
+
+  - name: gfx_stage3_bg
+    type: gfxcomp
+    compression: rlesegard
+    start: 0x0002D1AA
+    end:   0x0002F1D1
+    subdir: gfx/segard
+
+  - name: pal_0002F1D2
+    type: bin
+    start: 0x0002F1D2
+    end:   0x0002F1F4
+    subdir: palettes
+
+  - name: gfx_stage4_bg
+    type: gfxcomp
+    compression: rlesegard
+    start: 0x0002F1F4
+    end:   0x00030E4D
+    subdir: gfx/segard
+
+  - name: pal_00030E4E
+    type: bin
+    start: 0x00030E4E
+    end:   0x00030E70
+    subdir: palettes
+
+  - name: gfx_stage5_bg
+    type: gfxcomp
+    compression: rlesegard
+    start: 0x00030E70
+    end:   0x00033AA9
+    subdir: gfx/segard
+
+  - name: gfx_boss_stage2
+    type: gfxcomp
+    compression: rlesegard
+    start: 0x00033AAA
+    end:   0x000354E5
+    subdir: gfx/segard
+
+  - name: gfx_boss_stage5
+    type: gfxcomp
+    compression: rlesegard
+    start: 0x0003565C
+    end:   0x000385E6
+    subdir: gfx/segard
+
+  - name: gfx_boss_stage1
+    type: gfxcomp
+    compression: rlesegard
+    start: 0x00038A2E
+    end:   0x0003B673
+    subdir: gfx/segard
+
+  - name: gfx_boss_stage3
+    type: gfxcomp
+    compression: rlesegard
+    start: 0x0003BA00
+    end:   0x0003DAF6
+    subdir: gfx/segard
+
+  - name: gfx_boss_stage4
+    type: gfxcomp
+    compression: rlesegard
+    start: 0x0003DFE0
+    end:   0x0003EF5C
+    subdir: gfx/segard
+
+  - name: gfx_boss_normal_dogs
+    type: gfxcomp
+    compression: rlesegard
+    start: 0x00040A1C
+    end:   0x0004195C
+    subdir: gfx/segard
+
+  - name: gfx_power_ups
+    type: gfxcomp
+    compression: rlesegard
+    start: 0x0004195C
+    end:   0x00041AB8
+    subdir: gfx/segard
+
+  - name: gfx_grave
+    type: gfxcomp
+    compression: rlesegard
+    start: 0x00041AB8
+    end:   0x00041EC8
+    subdir: gfx/segard
+
+  - name: gfx_enemy_headless_horror2
+    type: gfxcomp
+    compression: rlesegard
+    start: 0x00041EC8
+    end:   0x0004270A
+    subdir: gfx/segard
+
+  - name: gfx_enemy_rattle_tail
+    type: gfxcomp
+    compression: rlesegard
+    start: 0x0004270A
+    end:   0x00042E7C
+    subdir: gfx/segard
+
+  - name: gfx_enemy_round_leech
+    type: gfxcomp
+    compression: rlesegard
+    start: 0x00042E7C
+    end:   0x000435E2
+    subdir: gfx/segard
+
+  - name: gfx_fossils
+    type: gfxcomp
+    compression: rlesegard
+    start: 0x000435E2
+    end:   0x00043F22
+    subdir: gfx/segard
+
+  - name: gfx_enemy_headless_horror1
+    type: gfxcomp
+    compression: rlesegard
+    start: 0x00043F22
+    end:   0x0004479E
+    subdir: gfx/segard
+
+  - name: gfx_enemy_cave_needle
+    type: gfxcomp
+    compression: rlesegard
+    start: 0x0004479E
+    end:   0x00044DA2
+    subdir: gfx/segard
+
+  - name: gfx_enemy_rock_turtle
+    type: gfxcomp
+    compression: rlesegard
+    start: 0x00044DA2
+    end:   0x0004547A
+    subdir: gfx/segard
+
+  - name: gfx_enemy_saw_fish
+    type: gfxcomp
+    compression: rlesegard
+    start: 0x0004547A
+    end:   0x00045DAB
+    subdir: gfx/segard
+
+  - name: gfx_enemy_gory_goat
+    type: gfxcomp
+    compression: rlesegard
+    start: 0x00045DAC
+    end:   0x000463DC
+    subdir: gfx/segard
+
+  - name: gfx_enemy_bad_boar
+    type: gfxcomp
+    compression: rlesegard
+    start: 0x000463DC
+    end:   0x000470D7
+    subdir: gfx/segard
+
+  - name: gfx_enemy_hammer_demon
+    type: gfxcomp
+    compression: rlesegard
+    start: 0x000470D8
+    end:   0x000476C6
+    subdir: gfx/segard
+
+  - name: gfx_enemy_dark_unicorn
+    type: gfxcomp
+    compression: rlesegard
+    start: 0x000476C6
+    end:   0x00047F56
+    subdir: gfx/segard
+
+  - name: gfx_rock
+    type: gfxcomp
+    compression: rlesegard
+    start: 0x00047F56
+    end:   0x00048451
+    subdir: gfx/segard
+
+  - name: gfx_enemy_chicken_stinger
+    type: gfxcomp
+    compression: rlesegard
+    start: 0x00048452
+    end:   0x00049020
+    subdir: gfx/segard
+
+  - name: gfx_enemy_grave_master
+    type: gfxcomp
+    compression: rlesegard
+    start: 0x00049020
+    end:   0x0004A30D
+    subdir: gfx/segard
+
+  - name: gfx_enemy_skinny_orcus
+    type: gfxcomp
+    compression: rlesegard
+    start: 0x0004A30E
+    end:   0x0004AAED
+    subdir: gfx/segard
+
+  - name: gfx_smoke
+    type: gfxcomp
+    compression: rlesegard
+    start: 0x0004AAEE
+    end:   0x0004B009
+    subdir: gfx/segard
+
+  - name: gfx_powerup_steal_magic
+    type: gfxcomp
+    compression: rlesegard
+    start: 0x0004B00A
+    end:   0x0004B3A3
+    subdir: gfx/segard
+
+  - name: gfx_font_credits
+    type: gfxcomp
+    compression: rlesegard
+    start: 0x0004B3A4
+    end:   0x0004C096
+    subdir: gfx/segard
+
+  - name: gfx_title_logo
+    type: gfxcomp
+    compression: huffnemesis
+    start: 0x0004C600
+    end:   0x0004CD17
+    subdir: gfx/nemesis
+
+  - name: gfx_title_screen2
+    type: gfxcomp
+    compression: rlesegard
+    start: 0x0004D24E
+    end:   0x0004D64D
+    subdir: gfx/segard
+
+  - name: gfx_title_screen
+    type: gfxcomp
+    compression: rlesegard
+    start: 0x0004D64E
+    end:   0x000529E7
+    subdir: gfx/segard
+
+  - name: pal_000529E8
+    type: bin
+    start: 0x000529E8
+    end:   0x00052A0A
+    subdir: palettes
+
+  - name: gfx_zeus_sprites
+    type: gfxcomp
+    compression: rlesegard
+    start: 0x00052A0A
+    end:   0x00052ECD
+    subdir: gfx/segard
+
+  - name: pal_000531A0
+    type: bin
+    start: 0x000531A0
+    end:   0x000531C0
+    subdir: palettes
+
+  - name: gfx_flames
+    type: gfxcomp
+    compression: rlesegard
+    start: 0x00058562
+    end:   0x00059938
+    subdir: gfx/segard
+
+  - name: gfx_transform_bg
+    type: gfxcomp
+    compression: rlesegard
+    start: 0x00059A74
+    end:   0x00059E87
+    subdir: gfx/segard
+
+  - name: gfx_portrait
+    type: gfxcomp
+    compression: rlesegard
+    start: 0x00059EE8
+    end:   0x0005F1BD
+    subdir: gfx/segard
+
+  - name: gfx_eyes_cutscene2
+    type: gfxcomp
+    compression: rlesegard
+    start: 0x00060280
+    end:   0x00060B66
+    subdir: gfx/segard
+
+  - name: gfx_eyes_cutscene
+    type: gfxcomp
+    compression: rlesegard
+    start: 0x00060B66
+    end:   0x0006312F
+    subdir: gfx/segard
+
+  - name: gfx_sprt_human
+    type: gfx
+    start: 0x00063B96
+    end:   0x00068505
+    subdir: gfx/characters
+
+  - name: gfx_sprt_human2
+    type: gfx
+    start: 0x0006851C
+    end:   0x0006D62B
+    subdir: gfx/characters
+
+  - name: gfx_sprt_wolf
+    type: gfx
+    start: 0x0006E308
+    end:   0x00072169
+    subdir: gfx/characters
+
+  - name: gfx_sprt_bear
+    type: gfx
+    start: 0x0007271C
+    end:   0x0007656D
+    subdir: gfx/characters
+
+  - name: gfx_sprt_tiger
+    type: gfx
+    start: 0x00076A22
+    end:   0x0007ADB3
+    subdir: gfx/characters
+
+  - name: gfx_sprt_dragon
+    type: gfx
+    start: 0x0007B37C
+    end:   0x0007DBED
+    subdir: gfx/characters
+
+  - name: gfx_fireball
+    type: gfxcomp
+    compression: rlesegard
+    start: 0x0007E370
+    end:   0x0007E5EB
+    subdir: gfx/segard
+
+  - name: gfx_fireball2
+    type: gfxcomp
+    compression: rlesegard
+    start: 0x0007E5EC
+    end:   0x0007EA8C
+    subdir: gfx/segard
+
+  - name: gfx_fireball3
+    type: gfxcomp
+    compression: rlesegard
+    start: 0x0007EA8C
+    end:   0x0007EF11
+    subdir: gfx/segard
+
+  - name: gfx_fireball4
+    type: gfxcomp
+    compression: rlesegard
+    start: 0x0007EF12
+    end:   0x0007F00D
+    subdir: gfx/segard
+
+  - name: gfx_bolts
+    type: gfxcomp
+    compression: rlesegard
+    start: 0x0007F00E
+    end:   0x0007F4A2
+    subdir: gfx/segard
+
+  - name: gfx_game_over
+    type: gfxcomp
+    compression: rlesegard
+    start: 0x0007F4C6
+    end:   0x0007F8B6
+    subdir: gfx/segard
+
+  - name: gfx_font_end
+    type: gfxcomp
+    compression: rlesegard
+    start: 0x0007F8B6
+    end:   0x0007FBE8
+    subdir: gfx/segard

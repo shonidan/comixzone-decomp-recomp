@@ -6,3 +6,6 @@ rom/*.bin
 rom/*.orig-backup
 decomp/out/
 source/build/
+source/generated/
+source/local.json
+source/settings.ini

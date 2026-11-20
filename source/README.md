@@ -1,15 +1,28 @@
 # Comix Zone — recompilación nativa jugable
 
+Este directorio es autocontenido: tiene su propia copia (recortada) del
+motor de decomp/recomp, sin depender de ningún otro repositorio del lado.
+
+## Preparar y compilar
+
+Todo lo necesario (SDL2, el intérprete 68000, etc.) ya está adentro de
+`third_party/` — no hace falta descargar nada más, ni inicializar
+submódulos.
+
+```bash
+node tools/setup.mjs --game comixzone "/ruta/a/tu/ComixZone_U.bin"
+cmake -B build -S . -DGAME=comixzone
+cmake --build build -j
+```
+
 ## Jugar
 
 ```bash
-./build/ComixZone "../rom/ComixZone_U.bin"
+./build/ComixZone "/ruta/a/tu/ComixZone_U.bin"
 ```
 
-El ejecutable es standalone: no necesita ningún archivo más al lado, solo
-el ROM (que no se incluye acá, ver `../rom/`). `--headless N` corre N
-frames sin ventana; `--press FRAME:BOTONES:LEN` para scripts de entrada;
-`--help` (o leer `runtime/src/main.c` en el motor) para el resto de flags.
+`--headless N` corre N frames sin ventana; `--press FRAME:BOTONES:LEN`
+para scripts de entrada; ver `runtime/src/main.c` para el resto de flags.
 
 ## Qué es esto
 
@@ -20,31 +33,31 @@ como respaldo para el ~3-5% de código que todavía no se descubrió
 estáticamente. Resultado actual: **~95-97% nativo**, verificado bloque
 por bloque contra el intérprete (0 instrucciones mal traducidas).
 
-## Motor compartido
+## Motor
 
-Construido con **Tools/Streets-of-Rage-Collection-Recomp** (el motor
-"Beyond Oasis", originalmente hecho para la colección de Streets of Rage,
-genérico para "cualquier cartucho" vía `tools/new-game.mjs`/`kit.mjs`).
-Es un motor compartido con otros juegos (SoR 1/2/3) — el crédito completo
-al proyecto original corresponde agregarlo cuando esto se publique/comparta.
+Copia recortada del motor "Streets-of-Rage-Collection-Recomp" (ver
+`../LICENSE`, MIT), genérico para "cualquier cartucho" vía
+`tools/new-game.mjs`/`kit.mjs`. Se le sacó toda la capa específica de
+Streets of Rage que Comix Zone no usa (menú in-game, vestuarios de
+peleadores, trucos, selección de edición, pantalla de lanzador) — queda
+solo lo que permite decomp/recomp genéricamente, más lo propio de este
+juego (control de 6 botones, parche de sonido, sin rebobinado/save
+states).
 
-## Cómo reconstruirlo
+## Control de 6 botones
 
-```bash
-cd ../../Tools/Streets-of-Rage-Collection-Recomp
-node tools/kit.mjs comixzone          # build + descubrimiento de código + verificación + reporte
-cp build/comixzone/ComixZone ../../ComixZone/source/build/
-```
-
-El reporte completo (funciones encontradas, % nativo, capturas) queda en
-`Tools/Streets-of-Rage-Collection-Recomp/build/comixzone/report/report.md`
-después de correr `kit.mjs`.
+`games/comixzone/game.json` activa `"sixButton"`. El 8BitDo M30 2.4G
+(pad con licencia Sega) funciona con los 6 botones completos conectado
+por su dongle 2.4GHz propio; cualquier otro control (Xbox, PlayStation,
+o el mismo M30 por cable USB) cae automáticamente a un esquema de 3
+botones sin X/Y/Z, porque el protocolo real de 6 botones no resultó
+confiable para pads genéricos — ver `runtime/src/io.c` y
+`runtime/src/pads.c` para el detalle.
 
 ## Estado y bugs conocidos
 
-Ver `Tools/Streets-of-Rage-Collection-Recomp/COMIXZONE_STATUS.md` (estado
-general, historial de la sesión) y `../decomp/NOTES.md` (diagnóstico
-detallado del bug de sonido, con desensamblado real del driver).
+Ver `../decomp/NOTES.md` para el diagnóstico detallado del bug de sonido
+(ya resuelto, con desensamblado real del driver).
 
 ## Descompilación / análisis estático
 

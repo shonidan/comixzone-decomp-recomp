@@ -1,0 +1,71 @@
+; sega2asm symbols — Altered Beast (USA, Europe) REV02
+; SHA-1: 38945360D824D2FB9535B4FD7F25B9AA9B32F019
+;
+; Format: name = $ADDRESS   or   $ADDRESS name   (both accepted by sega2asm)
+
+load_animtbl	                    = $0000419a ;
+clear_vsram	                        = $0000467a ;
+segard_decomp	                    = $000046f4 ;
+load_pal	                        = $000047b0 ;
+draw_text	                        = $000047f0 ;
+init_joypad	                        = $00004824 ;
+read_joypad	                        = $0000483a ;
+reset_z80	                        = $000048f2 ;
+init_z80	                        = $0000491c ;
+transfer_sounddriver_to_z80	        = $0000492e ;
+write_z80ram_1d03	                = $00004ac6 ;
+write_z80ram_1d06	                = $00004af2 ;
+write_z80ram_1d05	                = $00004b1a ;
+draw_segalogo	                    = $00009dea ;
+SkipSecurity	                    = $0000a5ea ;
+ChecksumLoop	                    = $0000a60a ;
+ChecksumError	                    = $0000a61e ;
+ChecksumOk	                        = $0000a632 ;
+HBLANK	                            = $0000a760 ;
+VBLANK	                            = $0000a770 ;
+screen_segalogo	                    = $0000a82c ;
+vdp_setup	                        = $0000a83a ;
+draw_gameover	                    = $0000a8f8 ;
+draw_stage	                        = $0000b52a ;
+stage1_resources_tbl	            = $0000b56c ;
+stage2_resources_tbl	            = $0000b5ea ;
+stage3_resources_tbl	            = $0000b660 ;
+stage4_resources_tbl	            = $0000b6da ;
+stage5_resources_tbl	            = $0000b75c ;
+screen_titlescreen	                = $0000b91e ;
+load_gamecfg_with_stage	            = $0000b970 ;
+load_gamecfg	                    = $0000b9a8 ;
+load_gamecfg_stage	                = $0000b9b6 ;
+load_gamecfg_options	            = $0000b9bc ;
+draw_titlescreen	                = $0000bad8 ;
+screen_soundtest	                = $0000be12 ;
+nemesis_decomp	                    = $0000c29c ;
+nemesis_decomp_to_ram	            = $0000c2ae ;
+nemesis_decomp_main	                = $0000c2b8 ;
+NemDec_ProcessCompressedData	    = $0000c2de ;
+NemPCD_WritePixel	                = $0000c306 ;
+NemPCD_NewRow	                    = $0000c310 ;
+NemPCD_WritePixel_Loop	            = $0000c314 ;
+NemPCD_InlineData	                = $0000c31a ;
+NemPCD_WriteRowToVDP	            = $0000c328 ;
+NemPCD_WriteRowToVDP_XOR	        = $0000c332 ;
+NemPCD_WriteRowToRAM	            = $0000c33e ;
+NemPCD_WriteRowToRAM_XOR	        = $0000c348 ;
+NemDec_BuildCodeTable	            = $0000c358 ;
+NemBCT_ChkEnd	                    = $0000c35a ;
+NemBCT_NewPALIndex	                = $0000c362 ;
+NemBCT_Loop	                        = $0000c364 ;
+NemBCT_ShortCode	                = $0000c38e ;
+NemBCT_ShortCode_Loop	            = $0000c39e ;
+
+gfx_sprt_human                      = $00063B96 ;
+gfx_sprt_human2                     = $0006851C ;
+gfx_sprt_wolf                       = $0006E308 ;
+gfx_sprt_tiger                      = $00076A22 ;
+gfx_sprt_bear                       = $0007271C ;
+gfx_sprt_dragon                     = $0007B37C ;
+
+DIFFICULTY                          = $FFFFFE04 ;
+LIVES	                            = $FFFFFE06 ;
+BEAST                               = $FFFFFE08 ;
+SEGARD_DECOMP_BUFFER                = $FFFFF400 ;

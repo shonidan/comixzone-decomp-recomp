@@ -1,0 +1,22 @@
+{
+  "title": "Comix Zone",
+  "exe": "ComixZone",
+  "rom": {
+    "name": "Comix Zone (4)",
+    "serial": "GM MK-1569 -00",
+    "size": 2097152,
+    "sha1": "555bbe20acc76edd016bd5b84d541e915361949a",
+    "headerChecksum": "F788"
+  },
+  "features": {
+    "ram": false,
+    "widescreen": false,
+    "launcher": false,
+    "sixButton": true,
+    "rewind": false
+  },
+  "sram": {
+    "present": false,
+    "always": false
+  }
+}

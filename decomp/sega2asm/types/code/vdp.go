@@ -1,0 +1,232 @@
+package code
+
+import (
+	"fmt"
+	"regexp"
+	"strconv"
+	"strings"
+)
+
+// VDPAnnotator holds compiled regexes for a specific VDP ctrl symbol name.
+type VDPAnnotator struct {
+	reMoveW *regexp.Regexp
+	reMoveL *regexp.Regexp
+}
+
+func NewVDPAnnotator(ctrlSym string) *VDPAnnotator {
+	dest := `\$(?:00)?[Cc]00004(?:\.l)?`
+	if ctrlSym != "" {
+		dest = dest + `|` + regexp.QuoteMeta(ctrlSym)
+	}
+	dest = `\s*,\s*\(?(?:` + dest + `)\)?`
+	return &VDPAnnotator{
+		reMoveW: regexp.MustCompile(`(?i)move\.w\s+#\$([0-9A-F]{1,4})` + dest),
+		reMoveL: regexp.MustCompile(`(?i)move\.l\s+#\$([0-9A-F]{1,8})` + dest),
+	}
+}
+
+func (a *VDPAnnotator) Annotate(line string) string {
+	if m := a.reMoveL.FindStringSubmatch(line); m != nil {
+		val, err := strconv.ParseUint(m[1], 16, 32)
+		if err == nil {
+			if c := vdpLongComment(uint32(val)); c != "" {
+				return line + "\t; " + c
+			}
+		}
+	} else if m := a.reMoveW.FindStringSubmatch(line); m != nil {
+		val, err := strconv.ParseUint(m[1], 16, 16)
+		if err == nil {
+			if c := vdpWordComment(uint16(val)); c != "" {
+				return line + "\t; " + c
+			}
+		}
+	}
+	return line
+}
+
+func vdpWordComment(w uint16) string {
+	if w>>14 == 2 {
+		reg := (w >> 8) & 0x1F
+		val := uint8(w & 0xFF)
+		return fmt.Sprintf("VDP reg #%d = $%02X (%s)", reg, val, vdpRegDesc(int(reg), val))
+	}
+	return ""
+}
+
+func vdpLongComment(v uint32) string {
+	hi := uint16(v >> 16)
+	lo := uint16(v)
+
+	if hi>>14 == 2 && lo>>14 == 2 {
+		return vdpWordComment(hi) + " | " + vdpWordComment(lo)
+	}
+	if hi>>14 == 2 {
+		return vdpWordComment(hi)
+	}
+	if lo>>14 == 2 {
+		return vdpWordComment(lo)
+	}
+
+	cd0_1 := uint8((hi >> 14) & 0x3)
+	cd2_5 := uint8((lo >> 4) & 0xF)
+	cd := cd0_1 | (cd2_5 << 2)
+	addr := (uint32(lo)&0x3)<<14 | uint32(hi&0x3FFF)
+
+	return fmt.Sprintf("VDP %s addr=$%04X", vdpMemType(cd), addr)
+}
+
+func vdpMemType(cd uint8) string {
+	switch cd {
+	case 0x00:
+		return "VRAM read"
+	case 0x01:
+		return "VRAM write"
+	case 0x03:
+		return "CRAM write"
+	case 0x04:
+		return "VSRAM read"
+	case 0x05:
+		return "VSRAM write"
+	case 0x08:
+		return "CRAM read"
+	case 0x20:
+		return "DMA fill"
+	case 0x21:
+		return "VRAM DMA write"
+	case 0x23:
+		return "CRAM DMA write"
+	case 0x25:
+		return "VSRAM DMA write"
+	case 0x30:
+		return "VRAM DMA copy"
+	default:
+		return fmt.Sprintf("CD=$%02X", cd)
+	}
+}
+
+func vdpRegDesc(reg int, val uint8) string {
+	switch reg {
+	case 0:
+		parts := []string{}
+		if val&0x10 != 0 {
+			parts = append(parts, "DispOff")
+		}
+		if val&0x08 != 0 {
+			parts = append(parts, "HVLatch")
+		}
+		if val&0x02 != 0 {
+			parts = append(parts, "HInt")
+		}
+		if val&0x01 != 0 {
+			parts = append(parts, "LCB")
+		}
+		if len(parts) == 0 {
+			return "Mode1: off"
+		}
+		return "Mode1: " + strings.Join(parts, "|")
+	case 1:
+		parts := []string{}
+		if val&0x80 != 0 {
+			parts = append(parts, "VRAM128K")
+		}
+		if val&0x40 != 0 {
+			parts = append(parts, "DisplayOn")
+		} else {
+			parts = append(parts, "DisplayOff")
+		}
+		if val&0x20 != 0 {
+			parts = append(parts, "VInt")
+		}
+		if val&0x10 != 0 {
+			parts = append(parts, "DMAEn")
+		}
+		if val&0x08 != 0 {
+			parts = append(parts, "V30")
+		} else {
+			parts = append(parts, "V28")
+		}
+		return "Mode2: " + strings.Join(parts, "|")
+	case 2:
+		return fmt.Sprintf("PlaneA=$%04X", uint32(val&0x38)<<10)
+	case 3:
+		return fmt.Sprintf("Window=$%04X", uint32(val&0x3E)<<10)
+	case 4:
+		return fmt.Sprintf("PlaneB=$%04X", uint32(val&0x07)<<13)
+	case 5:
+		return fmt.Sprintf("Sprites=$%04X", uint32(val&0x7F)<<9)
+	case 6:
+		return fmt.Sprintf("Sprites_hi=%d", (val>>5)&1)
+	case 7:
+		pal := (val >> 4) & 0x3
+		col := val & 0xF
+		return fmt.Sprintf("BgColor=PAL%d[%d]", pal, col)
+	case 8:
+		return fmt.Sprintf("SMSHScroll=$%02X", val)
+	case 9:
+		return fmt.Sprintf("SMSVScroll=$%02X", val)
+	case 10:
+		return fmt.Sprintf("HInt every %d lines", int(val)+1)
+	case 11:
+		hscrollModes := [4]string{"FullScreen", "Invalid", "Cell", "Line"}
+		parts := []string{}
+		if val&0x08 != 0 {
+			parts = append(parts, "ExtVScroll")
+		}
+		if val&0x04 != 0 {
+			parts = append(parts, "IE2")
+		}
+		parts = append(parts, "HScroll="+hscrollModes[val&0x03])
+		return "Mode3: " + strings.Join(parts, "|")
+	case 12:
+		h40 := (val&0x01 != 0) || (val&0x80 != 0)
+		interlace := [4]string{"", " Int2xRes", " Int2x", " IntDouble"}[(val>>1)&0x3]
+		shadow := ""
+		if val&0x08 != 0 {
+			shadow = "+Shadow"
+		}
+		res := "H32"
+		if h40 {
+			res = "H40"
+		}
+		return fmt.Sprintf("Mode4: %s%s%s", res, interlace, shadow)
+	case 13:
+		return fmt.Sprintf("HScroll=$%04X", uint32(val&0x3F)<<10)
+	case 14:
+		return fmt.Sprintf("NTBase_hi: PlaneA_b=%d PlaneB_b=%d", (val>>1)&1, val&1)
+	case 15:
+		return fmt.Sprintf("AutoInc=%d", val)
+	case 16:
+		ws := [4]string{"32", "64", "?", "128"}
+		return fmt.Sprintf("ScrollSize=%sx%s cells", ws[val&0x03], ws[(val>>4)&0x03])
+	case 17:
+		side := "Left"
+		if val&0x80 != 0 {
+			side = "Right"
+		}
+		return fmt.Sprintf("WindowH=%s cell=%d", side, val&0x1F)
+	case 18:
+		side := "Up"
+		if val&0x80 != 0 {
+			side = "Down"
+		}
+		return fmt.Sprintf("WindowV=%s cell=%d", side, val&0x1F)
+	case 19:
+		return fmt.Sprintf("DMALen_lo=$%02X", val)
+	case 20:
+		return fmt.Sprintf("DMALen_hi=$%02X (words=%d)", val, int(val)<<8)
+	case 21:
+		return fmt.Sprintf("DMASrc_lo=$%02X", val)
+	case 22:
+		return fmt.Sprintf("DMASrc_mid=$%02X", val)
+	case 23:
+		switch (val >> 6) & 0x3 {
+		case 0, 1:
+			return fmt.Sprintf("DMASrc_hi=$%02X (ROM/RAM→VRAM)", val&0x7F)
+		case 2:
+			return fmt.Sprintf("DMASrc_hi=$%02X (fill)", val&0x3F)
+		case 3:
+			return "DMA VRAM copy"
+		}
+	}
+	return fmt.Sprintf("reg%d=$%02X", reg, val)
+}

@@ -1,0 +1,440 @@
+// Sound hardware: YM2612 (via ymfm), SN76489 PSG, and resampling to the host rate.
+// The machine calls sound_advance() as emulated time passes; samples are made
+// at the YM2612's native rate and resampled into sound_out.
+#include "ymfm_opn.h"
+#include <cmath>
+#include <cstdio>
+#include <cstring>
+#include <vector>
+
+extern "C" {
+#include "genesis.h"
+#include "music.h"
+}
+
+namespace {
+
+constexpr uint32_t YM_CLOCK = 7670453;      // NTSC 68000 clock
+constexpr uint32_t YM_DIVIDER = 144;        // clocks per output sample
+constexpr double   YM_RATE = double(YM_CLOCK) / YM_DIVIDER;
+constexpr double   PSG_CLOCK = 3579545.0 / 16.0;
+// ymfm averages the six FM channels into full scale; twice that gives each channel a third
+// of it, as loud as the console gets without clipping. (It was 6: loud music then clipped,
+// or was squeezed by the limiter, and the bass, the loudest part, drowned out the rest.)
+constexpr int32_t  FM_GAIN = 2;
+
+class Ym : public ymfm::ymfm_interface {
+public:
+    Ym() : chip(*this) {}
+    ymfm::ym2612 chip;
+    int32_t timer_left[2] = { -1, -1 };     // clocks until each timer fires, -1 = stopped
+    int32_t busy_left = 0;                  // clocks until the chip stops reporting busy
+
+    void ymfm_set_timer(uint32_t tnum, int32_t clocks) override { timer_left[tnum] = clocks; }
+    void ymfm_set_busy_end(uint32_t clocks) override { busy_left = (int32_t)clocks; }
+    bool ymfm_is_busy() override { return busy_left > 0; }
+
+    void tick_timers(int32_t clocks) {
+        if (busy_left > 0) busy_left -= clocks;
+        for (uint32_t t = 0; t < 2; t++) {
+            if (timer_left[t] < 0) continue;
+            timer_left[t] -= clocks;
+            if (timer_left[t] <= 0) {
+                timer_left[t] = -1;
+                m_engine->engine_timer_expired(t); // may re-arm via ymfm_set_timer
+            }
+        }
+    }
+};
+
+Ym ym;
+
+// SN76489 as wired in the Genesis: 16-bit noise LFSR tapped at bits 0 and 3.
+struct Psg {
+    uint16_t period[4] = { 0, 0, 0, 0 };
+    uint8_t  atten[4] = { 15, 15, 15, 15 };
+    double   counter[4] = { 0, 0, 0, 0 };
+    int      out[4] = { 1, 1, 1, 1 };
+    uint16_t lfsr = 0x8000;
+    int      latch = 0;
+    int16_t  volume[16];
+
+    Psg() {
+        double v = 1333.0;                  // per channel, against FM_GAIN: the console's balance
+        for (int i = 0; i < 15; i++) { volume[i] = int16_t(v); v *= 0.794328; } // -2 dB steps
+        volume[15] = 0;
+    }
+
+    void write(uint8_t d) {
+        if (d & 0x80) {
+            latch = (d >> 4) & 7;
+            int ch = latch >> 1;
+            if (latch & 1) atten[ch] = d & 0x0F;
+            else if (ch == 3) { period[3] = d & 7; lfsr = 0x8000; }
+            else period[ch] = uint16_t((period[ch] & 0x3F0) | (d & 0x0F));
+        } else {
+            int ch = latch >> 1;
+            if (latch & 1) atten[ch] = d & 0x0F;
+            else if (ch == 3) { period[3] = d & 7; lfsr = 0x8000; }
+            else period[ch] = uint16_t((period[ch] & 0x00F) | ((d & 0x3F) << 4));
+        }
+    }
+
+    // As step(), but each channel's level is its average over the `ticks` clocks instead of
+    // its value at the end: a square wave whose edges fall between samples comes out
+    // band-limited enough not to alias into the audible range. The state ends up the same.
+    int32_t step_average(double ticks) {
+        double mix = 0;
+        for (int ch = 0; ch < 3; ch++) {
+            int p = period[ch] ? period[ch] : 1;
+            double left = ticks, high = 0;
+            while (counter[ch] <= left) {   // the time spent at each level before it flips
+                if (counter[ch] > 0) { if (out[ch]) high += counter[ch]; left -= counter[ch]; }
+                counter[ch] = p;
+                out[ch] ^= 1;
+            }
+            if (out[ch]) high += left;
+            counter[ch] -= left;
+            if (period[ch] > 1) mix += (2 * high / ticks - 1) * volume[atten[ch]];
+        }
+        // The noise counter reloads with $10, $20, $40 or tone 2's period and flips its output
+        // each time, and the shift register moves on every other flip: once per twice that.
+        int np = (period[3] & 3) == 3 ? (period[2] ? period[2] : 1) * 2 : (0x20 << (period[3] & 3));
+        double left = ticks, high = 0;
+        while (counter[3] <= left) {
+            if (counter[3] > 0) { if (out[3]) high += counter[3]; left -= counter[3]; }
+            counter[3] = np;
+            int fb = (period[3] & 4) ? ((lfsr & 1) ^ ((lfsr >> 3) & 1)) : (lfsr & 1);
+            lfsr = uint16_t((lfsr >> 1) | (fb << 15));
+            out[3] = lfsr & 1;
+        }
+        if (out[3]) high += left;
+        counter[3] -= left;
+        mix += (2 * high / ticks - 1) * volume[atten[3]];
+        return int32_t(mix);
+    }
+
+    // Advances by `ticks` PSG clocks and returns the mixed level.
+    int32_t step(double ticks) {
+        int32_t mix = 0;
+        for (int ch = 0; ch < 3; ch++) {
+            int p = period[ch] ? period[ch] : 1;
+            counter[ch] -= ticks;
+            while (counter[ch] <= 0) { counter[ch] += p; out[ch] ^= 1; }
+            if (period[ch] > 1) mix += out[ch] ? volume[atten[ch]] : -volume[atten[ch]];
+        }
+        int np = (period[3] & 3) == 3 ? (period[2] ? period[2] : 1) * 2 : (0x20 << (period[3] & 3));
+        counter[3] -= ticks;
+        while (counter[3] <= 0) {
+            counter[3] += np;
+            int fb = (period[3] & 4) ? ((lfsr & 1) ^ ((lfsr >> 3) & 1)) : (lfsr & 1);
+            lfsr = uint16_t((lfsr >> 1) | (fb << 15));
+            out[3] = lfsr & 1;
+        }
+        mix += out[3] ? volume[atten[3]] : -volume[atten[3]];
+        return mix;
+    }
+};
+
+Psg psg;
+double ym_pending = 0;                      // fractional YM samples owed
+double resample_pos = 0;                    // position between the last two YM samples
+int32_t prev_l = 0, prev_r = 0;
+
+// ---- Band-limited resampling (sound_quality >= 1) -------------------------------------
+// Each output sample is a windowed-sinc sum over the 16 YM-rate samples around it, cut
+// off a little below the output's Nyquist frequency, so nothing above it folds back.
+// It is 8 YM samples (0.15 ms) behind the linear path.
+constexpr int TAPS = 16, PHASES = 256;
+constexpr float HEADROOM = 0.5f;            // the mix runs hot: room for its peaks until the limiter
+float kernel[PHASES + 1][TAPS];
+int kernel_rate;                            // output rate the kernel was made for
+float hist_l[TAPS * 2], hist_r[TAPS * 2];   // the latest YM samples, twice over for easy reading
+int hist_at;
+
+void make_kernel() {
+    double fc = 0.9 * (sound_out_rate / 2.0) / YM_RATE;    // cutoff, in cycles per YM sample
+    if (fc > 0.45) fc = 0.45;
+    for (int p = 0; p <= PHASES; p++) {
+        double frac = double(p) / PHASES, sum = 0;
+        for (int k = 0; k < TAPS; k++) {
+            double x = k - (TAPS / 2 - 1) - frac;           // distance from the output point
+            double s = x == 0 ? 2 * fc : std::sin(2 * M_PI * fc * x) / (M_PI * x);
+            double w = 0.42 + 0.5 * std::cos(M_PI * x / (TAPS / 2)) + 0.08 * std::cos(2 * M_PI * x / (TAPS / 2));  // Blackman
+            kernel[p][k] = float(s * (std::fabs(x) < TAPS / 2 ? w : 0));
+            sum += kernel[p][k];
+        }
+        for (int k = 0; k < TAPS; k++) kernel[p][k] = float(kernel[p][k] / sum);
+    }
+    kernel_rate = sound_out_rate;
+}
+
+// ---- Output effects (sound_end_frame) --------------------------------------------------
+// A DC blocker (clean and rich), and for rich a gentle stereo widening and a small room:
+// four comb filters and two all-pass filters per side (after Freeverb), mixed in quietly.
+struct Comb {
+    std::vector<float> buf; size_t at = 0; float store = 0;
+    float run(float in, float feedback, float damp) {
+        float out = buf[at];
+        store = out * (1 - damp) + store * damp;
+        buf[at] = in + store * feedback;
+        if (++at == buf.size()) at = 0;
+        return out;
+    }
+};
+struct Allpass {
+    std::vector<float> buf; size_t at = 0;
+    float run(float in) {
+        float b = buf[at], out = b - in;
+        buf[at] = in + b * 0.5f;
+        if (++at == buf.size()) at = 0;
+        return out;
+    }
+};
+struct Room {
+    Comb comb[2][4];
+    Allpass ap[2][2];
+    int rate = 0;
+    void make(int r) {
+        static const int comb_ms10[4] = { 253, 269, 290, 307 };    // tenths of a millisecond
+        static const int ap_ms10[2] = { 50, 126 };
+        for (int s = 0; s < 2; s++) {
+            int spread = s ? 23 : 0;                                // left and right differ a little
+            for (int k = 0; k < 4; k++) comb[s][k].buf.assign(size_t((comb_ms10[k] * r) / 10000 + spread), 0.f);
+            for (int k = 0; k < 2; k++) ap[s][k].buf.assign(size_t((ap_ms10[k] * r) / 10000 + spread), 0.f);
+        }
+        rate = r;
+    }
+} room;
+float dc_in[2], dc_out[2];
+
+// The bass setting: a low shelf (RBJ's cookbook, slope 1) below about 150 Hz.
+struct Shelf {
+    float b0 = 1, b1 = 0, b2 = 0, a1 = 0, a2 = 0;
+    float x1[2], x2[2], y1[2], y2[2];
+    int db = 0, rate = 0;
+    void make(int gain_db, int r) {
+        double A = std::pow(10.0, gain_db / 40.0), w = 2 * M_PI * 150.0 / r;
+        double c = std::cos(w), al = std::sin(w) / 2 * std::sqrt(2.0), sa = 2 * std::sqrt(A) * al;
+        double a0 = (A + 1) + (A - 1) * c + sa;
+        b0 = float(A * ((A + 1) - (A - 1) * c + sa) / a0);
+        b1 = float(2 * A * ((A - 1) - (A + 1) * c) / a0);
+        b2 = float(A * ((A + 1) - (A - 1) * c - sa) / a0);
+        a1 = float(-2 * ((A - 1) + (A + 1) * c) / a0);
+        a2 = float(((A + 1) + (A - 1) * c - sa) / a0);
+        db = gain_db; rate = r;
+    }
+    float run(int ch, float x) {
+        float y = b0 * x + b1 * x1[ch] + b2 * x2[ch] - a1 * y1[ch] - a2 * y2[ch];
+        x2[ch] = x1[ch]; x1[ch] = x; y2[ch] = y1[ch]; y1[ch] = y;
+        return y;
+    }
+} shelf;
+
+// The console's own analog output stage low-pass filters everything (real hardware rolls
+// off around 3 kHz) -- without it, quantization artifacts (the YM2612 DAC's "ladder effect",
+// PCM sample truncation) come through as harsh digital noise instead of the warm, muted tone
+// the real console (and its composers, some of whom relied on the ladder effect on purpose)
+// actually had. Always on, unlike the bass shelf: it isn't a quality setting, it's hardware.
+struct LowPass {
+    float b0 = 1, b1 = 0, b2 = 0, a1 = 0, a2 = 0;
+    float x1[2], x2[2], y1[2], y2[2];
+    int rate = 0;
+    void make(int r) {
+        double f0 = 3000.0, w0 = 2 * M_PI * f0 / r, cw = std::cos(w0), sw = std::sin(w0);
+        double Q = 0.707, al = sw / (2 * Q);
+        double a0 = 1 + al;
+        b0 = float((1 - cw) / 2 / a0);
+        b1 = float((1 - cw) / a0);
+        b2 = b0;
+        a1 = float(-2 * cw / a0);
+        a2 = float((1 - al) / a0);
+        rate = r;
+    }
+    float run(int ch, float x) {
+        float y = b0 * x + b1 * x1[ch] + b2 * x2[ch] - a1 * y1[ch] - a2 * y2[ch];
+        x2[ch] = x1[ch]; x1[ch] = x; y2[ch] = y1[ch]; y1[ch] = y;
+        return y;
+    }
+} console_lpf;
+
+} // namespace
+
+extern "C" {
+
+int16_t sound_out[SOUND_OUT_MAX * 2];
+int     sound_out_count;
+int     sound_out_rate = 48000;
+int     sound_quality;
+int     sound_bass_db;
+bool    sound_fm_enabled = true, sound_psg_enabled = true;
+
+void sound_reset(void) {
+    ym.chip.reset();
+    ym.timer_left[0] = ym.timer_left[1] = -1;
+    psg = Psg();
+    ym_pending = resample_pos = 0;
+    sound_out_count = 0;
+}
+
+/* GEMS_DEBUG tracing: keyon/off writes (reg $28) and Timer A control ($24/$25/$27).
+ * See genesis.h and ComixZone/decomp/NOTES.md. */
+static uint8_t dbg_fm_reg[2];
+void    ym_write(int port, uint8_t v) {
+    if (gems_debug_on()) {
+        int bank = (port >> 1) & 1;
+        if (!(port & 1)) dbg_fm_reg[bank] = v;
+        else {
+            uint8_t reg = dbg_fm_reg[bank];
+            if (reg == 0x28) fprintf(stderr, "[dbg] frame=%u YM keyon/off data=%02x (chan %d, ops %x)\n",
+                                      g_dbg_frame, v, v & 7, (v >> 4) & 0xF);
+            else if (bank == 0 && (reg == 0x24 || reg == 0x25 || reg == 0x27)) {
+                fprintf(stderr, "[dbg] frame=%u FM reg=%02x data=%02x\n", g_dbg_frame, reg, v);
+                if (reg == 0x27)
+                    fprintf(stderr, "[dbg] frame=%u FM reg27 write BEFORE=%02x (about to apply data=%02x)\n",
+                            g_dbg_frame, ym.chip.read_status(), v);
+            }
+        }
+    }
+    ym.chip.write(uint32_t(port & 3), v);
+    if (gems_debug_on() && (port & 3) == 1 && dbg_fm_reg[(port >> 1) & 1] == 0x27)
+        fprintf(stderr, "[dbg] frame=%u FM reg27 write AFTER=%02x\n", g_dbg_frame, ym.chip.read_status());
+}
+uint8_t ym_read(void) { return ym.chip.read_status(); }
+int32_t sound_debug_timer_a_left(void) { return ym.timer_left[0]; }  /* GEMS_DEBUG, see NOTES.md */
+void    psg_write(uint8_t v) { psg.write(v); }
+
+// Called with the number of 68000 clocks that just elapsed.
+void sound_advance(int m68k_cycles) {
+    ym_pending += m68k_cycles / double(YM_DIVIDER);
+    const double out_step = YM_RATE / sound_out_rate;   // YM samples per output sample
+    while (ym_pending >= 1.0) {
+        ym_pending -= 1.0;
+        ymfm::ym2612::output_data o;
+        ym.chip.generate(&o);
+        ym.tick_timers(YM_DIVIDER);
+        int32_t p = sound_quality ? psg.step_average(PSG_CLOCK / YM_RATE) : psg.step(PSG_CLOCK / YM_RATE);
+        int32_t l = (sound_fm_enabled ? o.data[0] * FM_GAIN : 0) + (sound_psg_enabled ? p : 0);
+        int32_t r = (sound_fm_enabled ? o.data[1] * FM_GAIN : 0) + (sound_psg_enabled ? p : 0);
+        if (sound_quality) {
+            if (kernel_rate != sound_out_rate) make_kernel();
+            hist_l[hist_at] = hist_l[hist_at + TAPS] = float(l);
+            hist_r[hist_at] = hist_r[hist_at + TAPS] = float(r);
+            hist_at = (hist_at + 1) % TAPS;   // hist_*[hist_at .. +TAPS) is now oldest to newest
+            while (resample_pos < 1.0) {
+                if (sound_out_count < SOUND_OUT_MAX) {
+                    const float *k = kernel[int(resample_pos * PHASES)];
+                    const float *hl = hist_l + hist_at, *hr = hist_r + hist_at;
+                    float sl = 0, sr = 0;
+                    for (int t = 0; t < TAPS; t++) { sl += hl[t] * k[t]; sr += hr[t] * k[t]; }
+                    sl *= HEADROOM; sr *= HEADROOM;     // sound_end_frame() brings the level back
+                    sound_out[sound_out_count * 2] = int16_t(sl < -32768 ? -32768 : sl > 32767 ? 32767 : sl);
+                    sound_out[sound_out_count * 2 + 1] = int16_t(sr < -32768 ? -32768 : sr > 32767 ? 32767 : sr);
+                    sound_out_count++;
+                }
+                resample_pos += out_step;
+            }
+            resample_pos -= 1.0;
+            prev_l = l;
+            prev_r = r;
+            continue;
+        }
+        // Linear interpolation from YM rate to the output rate.
+        while (resample_pos < 1.0) {
+            if (sound_out_count < SOUND_OUT_MAX) {
+                int32_t sl = int32_t(prev_l + (l - prev_l) * resample_pos);
+                int32_t sr = int32_t(prev_r + (r - prev_r) * resample_pos);
+                sound_out[sound_out_count * 2] = int16_t(sl < -32768 ? -32768 : sl > 32767 ? 32767 : sl);
+                sound_out[sound_out_count * 2 + 1] = int16_t(sr < -32768 ? -32768 : sr > 32767 ? 32767 : sr);
+                sound_out_count++;
+            }
+            resample_pos += out_step;
+        }
+        resample_pos -= 1.0;
+        prev_l = l;
+        prev_r = r;
+    }
+}
+
+void sound_end_frame(void) {
+    music_mix(sound_out, sound_out_count, sound_out_rate, sound_quality ? HEADROOM : 1.f);   // the player's files (music.c)
+    bool bass = sound_bass_db != 0;
+    if (bass && (shelf.db != sound_bass_db || shelf.rate != sound_out_rate)) shelf.make(sound_bass_db, sound_out_rate);
+    if (console_lpf.rate != sound_out_rate) console_lpf.make(sound_out_rate);
+    if (!sound_quality) {
+        // Original: the bass setting and the console's own low-pass, then clipped as the mix
+        // is. While a music file plays, the DC filter too: the stopped song's DAC can hold a
+        // level under it.
+        bool dc = music_playing();
+        for (int i = 0; i < sound_out_count * 2; i++) {
+            float y = sound_out[i];
+            if (dc) {
+                int c = i & 1;
+                dc_out[c] = y - dc_in[c] + 0.9985f * dc_out[c];
+                dc_in[c] = y;
+                y = dc_out[c];
+            }
+            if (bass) y = shelf.run(i & 1, y);
+            y = console_lpf.run(i & 1, y);
+            sound_out[i] = int16_t(y < -32768 ? -32768 : y > 32767 ? 32767 : y);
+        }
+        return;
+    }
+    if (sound_quality >= 2 && room.rate != sound_out_rate) room.make(sound_out_rate);
+    for (int i = 0; i < sound_out_count; i++) {
+        float v[2];
+        for (int c = 0; c < 2; c++) {
+            float x = sound_out[i * 2 + c];
+            dc_out[c] = x - dc_in[c] + 0.9985f * dc_out[c];      // DC blocker, corner about 11 Hz
+            dc_in[c] = x;
+            v[c] = bass ? shelf.run(c, dc_out[c]) : dc_out[c];
+            v[c] = console_lpf.run(c, v[c]);
+        }
+        if (sound_quality >= 2) {
+            float mid = (v[0] + v[1]) * 0.5f, side = (v[0] - v[1]) * 0.5f * 1.3f;
+            v[0] = mid + side; v[1] = mid - side;
+            float in = (v[0] + v[1]) * 0.015f;
+            for (int c = 0; c < 2; c++) {
+                float wet = 0;
+                for (int k = 0; k < 4; k++) wet += room.comb[c][k].run(in, 0.78f, 0.35f);
+                for (int k = 0; k < 2; k++) wet = room.ap[c][k].run(wet);
+                v[c] += wet;
+            }
+        }
+        for (int c = 0; c < 2; c++) {
+            // Back to full level, with a soft knee above 3/4 of full scale instead of hard clipping.
+            float x = v[c] / HEADROOM, a = std::fabs(x), knee = 24576;
+            if (a > knee) a = knee + (32767 - knee) * std::tanh((a - knee) / (32767 - knee));
+            sound_out[i * 2 + c] = int16_t(x < 0 ? -a : a);
+        }
+    }
+}
+
+void sound_state(StateIO *s) {
+    // ymfm serializes itself into a byte vector; store its length first.
+    std::vector<uint8_t> chip;
+    uint32_t n = 0;
+    if (s->saving) {
+        ymfm::ymfm_saved_state st(chip, true);
+        ym.chip.save_restore(st);
+        n = uint32_t(chip.size());
+    }
+    state_io(s, &n, sizeof n);
+    if (!s->saving) {
+        if (n > 4096) { s->ok = false; return; }
+        chip.resize(n);
+    }
+    state_io(s, chip.data(), n);
+    if (!s->saving && s->ok) {
+        ymfm::ymfm_saved_state st(chip, false);
+        ym.chip.save_restore(st);
+    }
+    state_io(s, ym.timer_left, sizeof ym.timer_left);
+    state_io(s, &psg, sizeof psg);
+    state_io(s, &ym_pending, sizeof ym_pending);
+    state_io(s, &resample_pos, sizeof resample_pos);
+    state_io(s, &prev_l, sizeof prev_l);
+    state_io(s, &prev_r, sizeof prev_r);
+}
+
+} // extern "C"

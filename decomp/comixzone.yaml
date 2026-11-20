@@ -1,0 +1,32 @@
+name: comixzone
+sha1: "e8747eefdf61172be9da8787ba5be447ec73180f"   # ComixZone_U.bin, verificado (ver ComixZone/rom/)
+
+options:
+  platform: genesis
+  region: ntsc
+  basename: comixzone
+  base_path: ./out
+  target_path: ../rom/ComixZone_U.bin
+  asm_path: asm
+  asset_path: assets
+  build_path: build
+  header_output: true
+  no_suggestions: false
+
+# Segmentos confirmados hasta ahora. El resto del ROM (2MB) todavia no esta
+# mapeado -- este es el punto de partida de un split completo, no el split
+# completo en si. Ver NOTES.md para como se encontro cada direccion y que
+# falta por mapear.
+segments:
+  - name: header
+    type: header
+    start: 0x000000
+    end: 0x000200
+
+  - name: sound_driver
+    type: z80
+    start: 0x0037E2
+    end: 0x0057E2
+    # Confirmado byte a byte comparando una captura en vivo de la RAM del
+    # Z80 (bus.zram, offset 0 = esta direccion de ROM) contra el ROM --
+    # ver NOTES.md seccion "Como se encontro 0x37E2".

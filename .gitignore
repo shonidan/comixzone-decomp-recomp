@@ -1,0 +1,8 @@
+# Never commit the ROM or anything derived from it (disassembly output, build
+# artifacts, patched copies, backups). Everyone supplies their own legally
+# obtained ROM; see README.md for how to reproduce decomp/out and source/build
+# from it locally.
+rom/*.bin
+rom/*.orig-backup
+decomp/out/
+source/build/

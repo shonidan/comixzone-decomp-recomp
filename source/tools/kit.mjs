@@ -54,16 +54,27 @@ const build = () => {
 };
 
 // ---- The input script: Start through the title and menus, then seeded random play --------
+// Two things a pure explorer never reaches, so they go into the script on purpose: the
+// game's six-button moves (X/Y/Z get mixed in with A/B/C, not just the three-button set)
+// and its game-over/continue code (every so often the pilot stops dodging, takes the hit,
+// and lets itself die instead of always playing safe).
 function script(frames, seed) {
   let s = seed >>> 0;
   const rnd = (n) => { s ^= s << 13; s >>>= 0; s ^= s >>> 17; s ^= s << 5; s >>>= 0; return s % n; };
   const presses = [];
   for (let f = 600; f < 4000; f += 150) presses.push(`${f}:S:4`);          // logos, title, menus
-  for (let f = 4000; f < frames; ) {
+  let f = 4000;
+  while (f < frames) {
+    if (rnd(30) === 0) {
+      f += 120 + rnd(200);                                                 // stand still, get hit, die
+      for (let k = 0; k < 40; k++) presses.push(`${f + k * 20}:SABC:6`);   // continue screen, next life
+      f += 900;
+      continue;
+    }
     const dir = ['U', 'D', 'L', 'R', 'UL', 'UR', 'DL', 'DR', 'R', 'R'][rnd(10)];
     const len = 20 + rnd(80);
     presses.push(`${f}:${dir}:${len}`);
-    for (let k = 0; k < 3; k++) presses.push(`${f + rnd(len)}:${'ABC'[rnd(3)]}:${3 + rnd(6)}`);
+    for (let k = 0; k < 3; k++) presses.push(`${f + rnd(len)}:${'ABCXYZ'[rnd(6)]}:${3 + rnd(6)}`);
     if (rnd(40) === 0) presses.push(`${f + len}:S:4`);                       // menus, continues
     f += len + rnd(10);
   }

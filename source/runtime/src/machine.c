@@ -123,6 +123,7 @@ typedef struct {
     uint64_t clock;
     Vdp vdp;
     IoState io;
+    PadDetectState pad_detect;
 } Snapshot;
 
 static Snapshot *snap_before, *snap_native;
@@ -138,6 +139,7 @@ static void snap_take(Snapshot *s) {
     s->zbusreq = bus.z80_busreq; s->zreset = bus.z80_reset;
     s->vdp = vdp;
     s->io = io;
+    s->pad_detect = io_pad_detect_save();
 }
 static void snap_restore(const Snapshot *s) {
     m68ki_cpu = s->cpu; m68ki_remaining_cycles = s->cycles;
@@ -145,6 +147,7 @@ static void snap_restore(const Snapshot *s) {
     bus.z80_busreq = s->zbusreq; bus.z80_reset = s->zreset;
     vdp = s->vdp;
     io = s->io;
+    io_pad_detect_restore(s->pad_detect);
 }
 
 static void verify_report(const char *what, uint32_t a, uint32_t b) {

@@ -167,6 +167,15 @@ extern uint16_t pad_state[2];           /* PAD_* bits, 1 = pressed */
 typedef struct { uint8_t data[3], ctrl[3]; } IoState;   /* I/O port data and direction registers */
 extern IoState io;
 
+/* The six-button pads' TH-pulse count and its last-pulse timing (io.c): not part of IoState,
+ * but still state a save/snapshot (machine.c) needs, or a restore mid-sequence leaves it out
+ * of sync with the pad's real one (machine.c's --verify re-runs a block through the
+ * interpreter after restoring everything else, and without this it would count the TH
+ * pulses from that block twice). */
+typedef struct { uint8_t th_pulses[2]; int th_last[2]; } PadDetectState;
+PadDetectState io_pad_detect_save(void);
+void io_pad_detect_restore(PadDetectState s);
+
 /* The third fighter's frame (third.c): sprites reach it through tile numbers from
  * VDP_THIRD_TILE, which are the planes' tables in video memory, never sprite graphics. */
 #define VDP_THIRD_TILE 0x600

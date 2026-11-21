@@ -1,6 +1,65 @@
 # Comix Zone - notas de descompilación
 
-## Resumen ejecutivo de la sesión del 2026-11-20, parte 8 — PARCHEADO Y CONFIRMADO (para retomar rápido)
+## Resumen ejecutivo de la sesión del 2026-11-21 — autoplay dirigido: un bug de verify arreglado, otro divergente sin cerrar
+
+**Contexto**: sesión de autoplay dirigido (`source/tools/kit.mjs`, ampliado para
+mezclar botones de 6 (X/Y/Z) y morir a propósito para forzar game-over/continue)
+para subir cobertura más allá del ~63-97% previo. Encontró código nuevo (705→
+más funciones/bloques), pero expuso una divergencia real nativo-vs-intérprete.
+
+**Arreglado**: `--verify` (comparación bloque por bloque contra el intérprete,
+`runtime/src/machine.c`) daba un falso positivo en bloques que tocan el puerto
+de joystick ($1CB8B8 y vecinos, la detección de pad de 6 botones en
+`runtime/src/io.c`). Causa: `th_pulses[2]`/`th_last[2]` (el conteo de pulsos de
+TH para distinguir pad de 3 vs 6 botones) son `static` en `io.c`, **fuera** del
+`Snapshot` que `--verify` restaura entre la corrida nativa y la del intérprete
+— el intérprete heredaba el conteo ya avanzado por la corrida nativa y leía un
+nibble distinto del mismo puerto. Arreglado agregando `io_pad_detect_save`/
+`io_pad_detect_restore` (declaradas en `genesis.h`) y sumando `PadDetectState`
+al `Snapshot` (`snap_take`/`snap_restore`). Confirmado: antes del fix,
+`--verify` reportaba `MISMATCH block $1CB8B8: d reg native=00007F30
+interpreter=00007F33`; después, 0 mismatches en ~7.27M bloques verificados
+(1700 frames). Esto no afecta el juego real (no hay restore-and-replay fuera
+de `--verify`), solo volvía no confiable la propia herramienta de verificación
+para bloques de lectura de pad.
+
+**Pendiente, NO arreglado**: una corrida nativa completa sigue divergiendo de
+una corrida 100% interpretada (`--interpret`) a partir del frame exacto 1661
+(mismo PC final `$1CDB6C` en ambas, mismo VRAM, pero RAM distinta) — frames
+489-1660 son bit-idénticos. `--verify` no lo detecta (0 mismatches en ese
+rango), lo que descarta que sea un bloque individual mal traducido en
+aislamiento. Diffeando el dump completo de RAM (`--dump`) en el frame 1661:
+
+- 5 bytes sueltos cambian de un valor estable (igual en ambas corridas por
+  muchos frames) a valores completamente distintos: offsets RAM `$C2 $C3 $C7
+  $E3 $E7` → nativo `03 98 46 44 CE`, intérprete `F0 00 B4 3B AA`.
+- Además un bloque de ~13 bytes en `$76AC-$76CD` (paso de a 4, como una tabla
+  de entradas) queda poblado en nativo pero en cero en el intérprete — probable
+  efecto en cascada de lo anterior dentro del mismo frame, no la causa.
+- `sub_1CB890` (el mismo lector de puerto de joystick de más arriba) se llama
+  desde `$1E4AE0`/`$1E4B0E`/`$1E5836`, pero sus destinos conocidos
+  (`$FFFFC18E`/`$FFFFC18A`) no coinciden con los offsets que cambian — así que
+  puede ser una rutina DISTINTA la que escribe ahí (sin identificar todavía),
+  o una lectura de timing-sensible (HV counter de VDP u otro registro de
+  hardware usado como semilla) que diverge por un corrimiento acumulado de
+  ciclos entre modo nativo e interpretado, no detectable bloque por bloque
+  porque `--verify` resincroniza el estado antes de cada bloque.
+
+**Próximo paso concreto si se retoma**: identificar qué instrucción escribe
+RAM `$FF00C2`/`$FF00C3`/`$FF00C7`/`$FF00E3`/`$FF00E7` (probablemente
+direccionamiento `(An)` con offset negativo, no literal, así que buscar en
+`game.asm` por el patrón de offset en vez del address absoluto) y revisar si
+lee un registro de hardware (puerto de joystick, VDP HV counter, YM2612
+status) en el camino. Reproducir con: `./ComixZone <rom> --headless 1662
+--press "<script de kit.mjs, seed 1235, frames 6000>" --widescreen 0 --dump
+<file>` contra la misma corrida con `--interpret`, diffear los dumps.
+
+**No se comiteó** la cobertura de esta sesión (`games/comixzone/coverage.txt`)
+ni el build — sólo el fix de `--verify` (`runtime/src/io.c`,
+`runtime/src/machine.c`, `runtime/src/genesis.h`), que es seguro e
+independiente del bug pendiente.
+
+
 
 **El bug está arreglado.** Parche de 2×2 bytes en el ROM (no en el motor),
 confirmado con la misma herramienta de instrumentación que encontró el

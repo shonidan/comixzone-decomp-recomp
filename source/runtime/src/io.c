@@ -42,6 +42,15 @@ void io_frame(void) {
     }
 }
 
+PadDetectState io_pad_detect_save(void) {
+    PadDetectState s;
+    for (int p = 0; p < 2; p++) { s.th_pulses[p] = th_pulses[p]; s.th_last[p] = th_last[p]; }
+    return s;
+}
+void io_pad_detect_restore(PadDetectState s) {
+    for (int p = 0; p < 2; p++) { th_pulses[p] = s.th_pulses[p]; th_last[p] = s.th_last[p]; }
+}
+
 /* Pin levels the pad drives (active low). TH (bit 6) selects which buttons appear. */
 static uint8_t pad_pins(int port) {
     uint16_t p = pad_state[port];

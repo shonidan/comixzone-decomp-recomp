@@ -26,6 +26,7 @@
 #include "texpack.h"
 #include "menu.h"
 #include "pause.h"
+#include "lang.h"
 #include "savestate.h"
 #include "music.h"
 #include "ui.h"
@@ -362,6 +363,7 @@ int main(int argc, char **argv) {
     settings_load(ini);
 
     int headless_frames = 0;
+    bool spanish = false;
     const char *shot = NULL;
     int profile_frames = 0;
     const char *wav = NULL;
@@ -447,6 +449,7 @@ int main(int argc, char **argv) {
         else if (!strcmp(argv[i], "--player2") && i + 1 < argc) { settings.player2 = !strcmp(argv[++i], "ai"); test_overrides = true; }
         else if (!strcmp(argv[i], "--shots") && i + 2 < argc) { shot_every = atoi(argv[++i]); shot_dir = argv[++i]; }
         else if (!strcmp(argv[i], "--widescreen") && i + 1 < argc) { settings.widescreen = atoi(argv[++i]) != 0; test_overrides = true; }
+        else if (!strcmp(argv[i], "--language") && i + 1 < argc) spanish = !strcmp(argv[++i], "spanish");
         else if (!strcmp(argv[i], "--overclock") && i + 1 < argc) { settings.overclock = atoi(argv[++i]); test_overrides = true; }   /* percent */
         else if (!strcmp(argv[i], "--lighting") && i + 1 < argc) { settings.lighting = atoi(argv[++i]) & 3; test_overrides = true; }   /* 0-3 */
         else if (!strcmp(argv[i], "--hdr") && i + 1 < argc) { settings.hdr = atoi(argv[++i]) % 3; test_overrides = true; }   /* 0-2 */
@@ -669,6 +672,7 @@ int main(int argc, char **argv) {
         else SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, GAME_TITLE " Recomp", msg, NULL);
         return 1;
     }
+    lang_apply(bus.rom, bus.rom_size, spanish);
     /* The ROM played is its edition's ROM and sets the edition (an older settings.ini names
      * only rom_path). */
     settings_use_rom(settings.rom_path);

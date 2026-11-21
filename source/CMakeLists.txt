@@ -123,6 +123,7 @@ add_executable(${GAME_EXE} WIN32
   runtime/src/decoders.c
   runtime/src/stubs.c
   runtime/src/pause.c
+  runtime/src/lang.c
   ${FONTS_C}
   runtime/src/third.c
   runtime/src/sound.cpp)

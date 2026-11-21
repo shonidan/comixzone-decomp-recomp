@@ -11,14 +11,24 @@ submódulos.
 
 ```bash
 node tools/setup.mjs --game comixzone "/ruta/a/tu/ComixZone_U.bin"
-cmake -B build -S . -DGAME=comixzone
-cmake --build build -j
+cmake -B build/comixzone -S . -DGAME=comixzone
+cmake --build build/comixzone -j
 ```
+
+Importante: compilar en `build/comixzone` (no en `build` a secas) — las
+herramientas de cobertura/recompilación (`disasm.mjs`, `recomp.mjs`,
+`save-coverage.mjs`) esperan el build y su `coverage.bin` ahí
+(`BUILD_DIR = build/<game>`, ver `tools/lib/game.mjs`), porque el
+ejecutable escribe `coverage.bin` al lado de sí mismo. Si compilás en
+otro lado, esas herramientas nunca van a ver lo que jugaste. Para no
+pensarlo, usar directamente `node tools/kit.mjs comixzone`, que compila
+ahí, juega headless para encontrar código nuevo, recompila y verifica
+todo en un solo paso.
 
 ## Jugar
 
 ```bash
-./build/ComixZone "/ruta/a/tu/ComixZone_U.bin"
+./build/comixzone/ComixZone "/ruta/a/tu/ComixZone_U.bin"
 ```
 
 `--headless N` corre N frames sin ventana; `--press FRAME:BOTONES:LEN`

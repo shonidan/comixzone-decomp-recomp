@@ -1,6 +1,7 @@
 /* 68000 memory map: cartridge ROM/SRAM, work RAM, Z80 area, I/O and VDP. */
 #include "genesis.h"
 #include "platform.h"
+#include "m68k.h"
 #include <stdio.h>
 #include <string.h>
 
@@ -162,7 +163,12 @@ uint16_t bus_read16(uint32_t a) {
 /* ---- Writes ----------------------------------------------------------------- */
 void bus_write8(uint32_t a, uint8_t v) {
     a &= 0xFFFFFF;
-    if (a >= 0xE00000) { bus.ram[a & 0xFFFF] = v; return; }
+    if (a >= 0xE00000) {
+        a &= 0xFFFF;
+        ram_debug_check(a, bus.ram[a], v, m68k_get_reg(NULL, M68K_REG_PC), "interp");
+        bus.ram[a] = v;
+        return;
+    }
 #if GAME_SOR == 3
     if (in_extra(a)) { bus.sprites_extra[a - SPRITES_EXTRA_ADDR] = v; bus.sprites_extra_written = true; return; }
 #endif
@@ -186,8 +192,12 @@ void bus_write8(uint32_t a, uint8_t v) {
 void bus_write16(uint32_t a, uint16_t v) {
     a &= 0xFFFFFE;
     if (a >= 0xE00000) {
-        bus.ram[a & 0xFFFF] = (uint8_t)(v >> 8);
-        bus.ram[(a & 0xFFFF) + 1] = (uint8_t)v;
+        a &= 0xFFFF;
+        uint32_t pc = m68k_get_reg(NULL, M68K_REG_PC);
+        ram_debug_check(a, bus.ram[a], (uint8_t)(v >> 8), pc, "interp");
+        ram_debug_check(a + 1, bus.ram[a + 1], (uint8_t)v, pc, "interp");
+        bus.ram[a] = (uint8_t)(v >> 8);
+        bus.ram[a + 1] = (uint8_t)v;
         return;
     }
     if (a >= 0xC00000 && a < 0xC00020) { vdp_write16(a, v); return; }

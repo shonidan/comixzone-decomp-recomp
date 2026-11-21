@@ -30,6 +30,12 @@
 extern uint32_t g_dbg_frame;            /* incremented once per machine_run_frame call */
 int gems_debug_on(void);                /* true iff GEMS_DEBUG is set (checked once, cached) */
 
+/* RAM_DEBUG=hex,hex,...: prints frame, the writing block's entry PC (exact for the
+ * interpreter, the current native block's start otherwise) and old/new byte whenever one of
+ * the given work-RAM offsets (relative to $FF0000) changes. For tracing which run-mode-
+ * dependent write source some native-vs-interpreter divergence back to. */
+void ram_debug_check(uint32_t ram_offset, uint8_t old_v, uint8_t new_v, uint32_t pc, const char *source);
+
 /* ---- Bus (bus.c) ---------------------------------------------------------- */
 typedef struct {
     uint8_t rom[ROM_SIZE];

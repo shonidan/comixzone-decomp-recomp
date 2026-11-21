@@ -1,5 +1,81 @@
 # Comix Zone - notas de descompilación
 
+## Resumen ejecutivo de la sesión del 2026-11-21, parte 2 — localizada la escritura, descartada una hipótesis de causa (para retomar rápido)
+
+**Contexto**: continuación directa de la parte 1 de hoy (más abajo). Esa parte
+dejó pendiente encontrar qué instrucción escribe RAM `$FF00C2/C3/C7/E3/E7` en
+el frame divergente (1661/1662 según la convención de conteo — ver nota de
+abajo) y por qué difiere entre nativo e interpretado.
+
+**Herramientas nuevas, persistentes (cero costo si no están activadas), para
+la próxima sesión**:
+- `RAM_DEBUG=offset,offset,...` (hex, relativo a `$FF0000`): imprime frame, PC
+  (del bloque nativo que escribe, o exacto si es el intérprete), origen
+  (`native`/`interp`) y byte viejo/nuevo cada vez que cambia uno de los offsets
+  dados. Hook en `wr8`/`wr16` (`runtime/src/recomp_rt.h`, camino nativo) y
+  `bus_write8`/`bus_write16` (`runtime/src/bus.c`, camino intérprete). Declarado
+  en `genesis.h`, implementado en `machine.c`.
+- `IRQ_DEBUG=1`: imprime frame/nivel/PC cada vez que se toma una interrupción
+  (`gen_int_ack`, `machine.c`) y, en el loop de fallback de `run()`, frame/PC/
+  si la instrucción estaba cubierta (`bail`) o no (`uncovered`) cada vez que se
+  cae al intérprete.
+
+**Conteo de frames, aclaración**: el hash-log de `--hash-log` numera desde 0
+(primera línea = frame 0); `g_dbg_frame` (usado por estas herramientas)
+incrementa ANTES de procesar, así que su valor coincide con "número de
+`machine_run_frame` ya completados", es decir, 1 más que el índice del
+hash-log para el mismo frame real. La "divergencia en el frame 1661" del
+hash-log y el "frame=1662" que imprimen estas herramientas son el MISMO
+frame — no hay dos problemas distintos ahí, fue una confusión de esta sesión
+que llevó a descartar por error, un rato, la pista de las interrupciones.
+
+**Localizada la instrucción que escribe los 5 bytes**: con `RAM_DEBUG`,
+ambos modos escriben esos offsets desde la MISMA instrucción — el prólogo del
+manejador de VBlank (`$2340`, `movem.l d0-d7/a0-a6,-(a7)`, dentro de
+`b_00233C` en `generated/comixzone/main/recomp_00.c`). La instrucción está
+bien traducida (ya la leí completa, coincide 1:1 con el ASM). Lo que difiere
+no es la instrucción sino los VALORES de los registros que guarda — porque la
+interrupción de VBlank se toma en un PC distinto en cada modo (confirmado con
+`IRQ_DEBUG`: nativo `$002804`, intérprete `$002CD0`, separados por ~1200
+bytes). Esto es downstream, no la causa: el flujo de control ya había
+divergido genuinamente ANTES de esta interrupción.
+
+**Hipótesis probada y DESCARTADA**: que la causa fuera la cadencia de chequeo
+de interrupciones de Musashi (`m68k_execute()` sólo revisa interrupciones
+pendientes una vez por llamada — comentario original `/* ASG: removed
+per-instruction interrupt checks */` en `third_party/musashi/m68kcpu.c`), y
+que el loop de fallback de `run()` llamando `m68k_execute(1)` instrucción por
+instrucción (en vez de una sola llamada grande, como hace el modo 100%
+interpretado) revisara de más y tomara la interrupción antes de tiempo.
+Implementé el fix (agrupar todo el tramo no cubierto en una sola llamada a
+`m68k_execute()`, dejando sin tocar el caso de `BAIL` de una sola
+instrucción), confirmé con las líneas `[sched]` de `IRQ_DEBUG` que el
+fallback SÍ agrupa en una sola llamada ahora (tramos de cientos de ciclos, no
+de a 1) — y la
+interrupción se sigue tomando exactamente en los mismos `$002804`/`$002CD0`
+de antes. **Revertido** (no se justifica mantener un cambio de scheduler
+compartido que no soluciona nada). Si se retoma esto, no reabrir esta vía sin
+un dato nuevo.
+
+**Próximo paso concreto si se retoma**: el control de flujo ya difiere ANTES
+del frame 1661/1662 — buscar hacia atrás, no en la interrupción en sí. Usar
+`IRQ_DEBUG=1` para comparar la secuencia COMPLETA de interrupciones tomadas
+(nivel+PC) entre nativo e interpretado desde bien antes (ej. frame 1600) y
+encontrar la PRIMERA que no coincide exactamente (no asumir que es la del
+frame 1661 solo porque ahí es donde el hash de RAM deja de coincidir — un
+registro/dato puede divergir un rato antes sin que el hash completo de 64KB
+lo note, si cae en una zona que se sobreescribe antes del siguiente muestreo
+por frame). Candidatos para revisar en ese tramo (vistos en el trace de
+`SCHED_DEBUG`, código no cubierto cerca de la interrupción): bloques en
+`$0022xx-$0027xx` y `$1Cxxxx` — puede valer la pena cerrar cobertura ahí
+primero (jugar más/ampliar el autoplay) para que `--verify` pueda
+inspeccionarlos bloque por bloque, ya que hoy caen al intérprete en ambos
+modos y por eso `--verify` no los toca.
+
+**No se comiteó** la cobertura de esta sesión ni el build — sólo quedan para
+comitear las herramientas de debug (`RAM_DEBUG`, `IRQ_DEBUG`/`SCHED_DEBUG`),
+que son seguras e independientes del bug pendiente.
+
 ## Resumen ejecutivo de la sesión del 2026-11-21 — autoplay dirigido: un bug de verify arreglado, otro divergente sin cerrar
 
 **Contexto**: sesión de autoplay dirigido (`source/tools/kit.mjs`, ampliado para

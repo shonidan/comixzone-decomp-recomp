@@ -100,8 +100,16 @@ static void recomp_init(void) {
         for (const RecompEntry *e = game->tables[t]; e->fn; e++) recomp_fn[e->pc >> 1] = e->fn;
 }
 
+static bool irq_debug_on(void) {
+    static int on = -1;
+    if (on < 0) on = getenv("IRQ_DEBUG") ? 1 : 0;
+    return on;
+}
+
 int gen_int_ack(int level) {
     irq_taken = true;
+    if (irq_debug_on())
+        fprintf(stderr, "[irq] frame=%u level=%d pc=%06x\n", g_dbg_frame, level, m68ki_cpu.pc & 0xFFFFFF);
     if (level == 6) vdp.vint_pending = false;
     else if (level == 4) vdp.hint_pending = false;
     /* Update the line without m68k_set_irq(): that would re-enter interrupt processing. */
@@ -297,7 +305,16 @@ static void run(int cycles) {
                 piece_start = m68ki_remaining_cycles = 0;
                 if (!(ret & BAIL)) continue;
             }
-            /* One interpreted instruction (also takes pending interrupts and handles STOP). */
+            /* One interpreted instruction (also takes pending interrupts and handles STOP).
+             * Tried batching this into one m68k_execute() call per genuinely-uncovered
+             * stretch (to match a fully-interpreted run's interrupt-check cadence -- Musashi
+             * checks for a pending interrupt once per m68k_execute() call, not once per
+             * instruction): confirmed with IRQ_DEBUG's [sched] lines that it does take effect (large
+             * pieces, not just single instructions), but it did NOT change where the
+             * diverging interrupt below gets taken, so this is not (or not only) a
+             * check-cadence issue. See decomp/NOTES.md. */
+            if (irq_debug_on())
+                fprintf(stderr, "[sched] frame=%u pc=%06x %s\n", g_dbg_frame, pc, fn ? "bail" : "uncovered");
             piece_start = 1;
             int used = m68k_execute(1);
             seg_done += used;
@@ -314,6 +331,26 @@ static void run(int cycles) {
     line_cycle_base += cycles;
     z80_run(cycles);
     sound_advance(cycles);
+}
+
+void ram_debug_check(uint32_t ram_offset, uint8_t old_v, uint8_t new_v, uint32_t pc, const char *source) {
+    static uint16_t addrs[16];
+    static int count = -1;
+    if (count < 0) {
+        count = 0;
+        const char *s = getenv("RAM_DEBUG");
+        for (char *end; s && *s && count < 16; s = *end == ',' ? end + 1 : end) {
+            long v = strtol(s, &end, 16);
+            if (end == s) break;
+            addrs[count++] = (uint16_t)v;
+        }
+    }
+    if (!count || old_v == new_v) return;
+    for (int i = 0; i < count; i++)
+        if (addrs[i] == (uint16_t)ram_offset) {
+            fprintf(stderr, "[ram] frame=%u pc=%06x src=%s FF%04X: %02x -> %02x\n", g_dbg_frame, pc, source, (unsigned)ram_offset, old_v, new_v);
+            break;
+        }
 }
 
 uint32_t g_dbg_frame;

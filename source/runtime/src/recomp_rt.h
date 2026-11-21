@@ -70,17 +70,24 @@ static inline uint32_t rd32(uint32_t a) { return rd16(a) << 16 | rd16(a + 2); }
 static inline void wr8(uint32_t a, uint32_t v) {
     a &= 0xFFFFFF;
     if (a >= 0xE00000) {
+        a &= 0xFFFF;
         /* GEMS_DEBUG: Comix Zone's $FFFFBFD6 guard flag (see decomp/NOTES.md). Game-specific
          * address, left in for the next session of this investigation. */
-        if (gems_debug_on() && (a & 0xFFFF) == 0xBFD6)
+        if (gems_debug_on() && a == 0xBFD6)
             fprintf(stderr, "[dbg] frame=%u write BFD6=%02x\n", g_dbg_frame, (uint8_t)v);
-        bus.ram[a & 0xFFFF] = (uint8_t)v;
+        ram_debug_check(a, bus.ram[a], (uint8_t)v, m68ki_cpu.pc & 0xFFFFFF, "native");
+        bus.ram[a] = (uint8_t)v;
     }
     else bus_write8(a, (uint8_t)v);
 }
 static inline void wr16(uint32_t a, uint32_t v) {
     a &= 0xFFFFFF;
-    if (a >= 0xE00000) { a &= 0xFFFF; bus.ram[a] = (uint8_t)(v >> 8); bus.ram[a + 1] = (uint8_t)v; }
+    if (a >= 0xE00000) {
+        a &= 0xFFFF;
+        ram_debug_check(a, bus.ram[a], (uint8_t)(v >> 8), m68ki_cpu.pc & 0xFFFFFF, "native");
+        ram_debug_check(a + 1, bus.ram[a + 1], (uint8_t)v, m68ki_cpu.pc & 0xFFFFFF, "native");
+        bus.ram[a] = (uint8_t)(v >> 8); bus.ram[a + 1] = (uint8_t)v;
+    }
     else bus_write16(a, (uint16_t)v);
 }
 static inline void wr32(uint32_t a, uint32_t v) { wr16(a, v >> 16); wr16(a + 2, v); }

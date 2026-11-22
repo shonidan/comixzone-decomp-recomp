@@ -121,6 +121,7 @@ add_executable(${GAME_EXE} WIN32
   runtime/src/z80bus.c
   runtime/src/music.c
   runtime/src/decoders.c
+  runtime/src/cheats.c
   runtime/src/stubs.c
   runtime/src/pause.c
   runtime/src/lang.c

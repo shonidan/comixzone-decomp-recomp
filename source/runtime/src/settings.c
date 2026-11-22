@@ -109,6 +109,8 @@ void settings_load(const char *path) {
         else if (!strcmp(k, "cheat_health")) settings.cheat_health = parse_bool(v);
         else if (!strcmp(k, "cheat_spirit")) settings.cheat_spirit = parse_bool(v);
         else if (!strcmp(k, "cheat_lives")) settings.cheat_lives = parse_bool(v);
+        else if (!strcmp(k, "cheat_onehit")) settings.cheat_onehit = parse_bool(v);
+        else if (!strcmp(k, "cheat_multijump")) settings.cheat_multijump = parse_bool(v);
         else if (!strcmp(k, "cheat_specials")) settings.cheat_specials = parse_bool(v);
         else if (!strcmp(k, "cheat_time")) settings.cheat_time = parse_bool(v);
         else if (!strcmp(k, "cheat_unlock")) settings.cheat_unlock = parse_bool(v);
@@ -225,6 +227,8 @@ void settings_save(const char *path) {
     fprintf(f, "cheat_health=%d\n", settings.cheat_health);
     fprintf(f, "cheat_spirit=%d\n", settings.cheat_spirit);
     fprintf(f, "cheat_lives=%d\n", settings.cheat_lives);
+    fprintf(f, "cheat_onehit=%d\n", settings.cheat_onehit);
+    fprintf(f, "cheat_multijump=%d\n", settings.cheat_multijump);
     fprintf(f, "cheat_specials=%d\n", settings.cheat_specials);
     fprintf(f, "cheat_time=%d\n", settings.cheat_time);
     fprintf(f, "cheat_unlock=%d\n", settings.cheat_unlock);

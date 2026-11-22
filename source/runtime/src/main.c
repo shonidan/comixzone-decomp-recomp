@@ -577,6 +577,8 @@ int main(int argc, char **argv) {
             else if (!strcmp(c, "onehit")) settings.cheat_attack = 3;
             else if (!strcmp(c, "fast")) settings.cheat_speed = 1;
             else if (!strcmp(c, "veryfast")) settings.cheat_speed = 2;
+            else if (!strcmp(c, "enemyonehit")) settings.cheat_onehit = true;
+            else if (!strcmp(c, "multijump")) settings.cheat_multijump = true;
         }
         else if (!strcmp(argv[i], "--menu-shot") && i + 3 < argc) {
             /* --menu-shot F.png W H: open the in-game menu over the last frame and render it. */
@@ -1086,6 +1088,11 @@ int main(int argc, char **argv) {
             else if (pause_is_open()) {
                 switch (pause_event(&e)) {
                 case PAUSE_CLOSE: case PAUSE_LOADED: pause_close(); break;
+                case PAUSE_LEVEL_JUMP:
+                    machine_reset();
+                    rewind_reset(settings.rewind ? (size_t)settings.rewind_mb << 20 : 0);
+                    pause_close();
+                    break;
                 case PAUSE_QUIT: running = false; break;
                 case PAUSE_NONE: break;
                 }
@@ -1232,6 +1239,7 @@ int main(int argc, char **argv) {
                      * 2 and 3 have keys of their own too (none until they pick some). */
                     bool two = !settings.player2 && pads_count() >= 2;
                     pad_state[0] = input_pad_bits(0, keys, two ? pads_player(0) : pads_active());
+                    if (cheats_force_start()) pad_state[0] |= PAD_START;
                     pad_state[1] = settings.player2 ? ai_pad() : input_pad_bits(1, keys, two ? pads_player(1) : NULL);
                     third_pad = input_pad_bits(2, keys, pads_count() >= 3 ? pads_player(2) : NULL);
                     if (getenv("INPUT_DEBUG")) {

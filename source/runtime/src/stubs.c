@@ -1,9 +1,11 @@
 /* Stand-ins for the modules this fork drops: Streets of Rage's fighter/combat/AI logic
- * (ai.c, combat.c, outfit.c, fighters.c, automap.c, cheats.c, ost.c jukebox) and the
+ * (ai.c, combat.c, outfit.c, fighters.c, automap.c, ost.c jukebox) and the
  * enhanced-edition visual extras (menu.c, hd.c upscaling, texpack.c, motion.c smooth
  * motion, preview.c). vdp.c, launcher.c, settings.c and main.c still include their
  * headers and call into them unchanged; every one of those calls is a safe no-op here,
- * so nothing else needed editing. See README.md. */
+ * so nothing else needed editing. cheats.c is a real module again (pause.c's Infinite
+ * health/lives rows and --poke need it); menu.c stays dropped, pause.c is our own
+ * menu. See README.md. */
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -11,7 +13,6 @@
 
 #include "ai.h"
 #include "automap.h"
-#include "cheats.h"
 #include "combat.h"
 #include "fighters.h"
 #include "hd.h"
@@ -38,13 +39,6 @@ bool automap_draw(float x, float y, float w, float h, float t, float alpha) {
     (void)x; (void)y; (void)w; (void)h; (void)t; (void)alpha;
     return false;
 }
-
-/* ---- cheats.h ---------------------------------------------------------------------- */
-int  cheats_add_codes(const char *spec) { (void)spec; return 0; }
-void cheats_poke_once(const char *spec) { (void)spec; }
-void cheats_clear_codes(void) {}
-void cheats_frame(void) {}
-void cheats_hooks(void) {}
 
 /* ---- combat.h ------------------------------------------------------------------ */
 void combat_frame(const HdFrame *f, bool world, float cam_x, float cam_y, bool live) {
@@ -152,11 +146,6 @@ bool outfit_is_open(void) { return false; }
 bool outfit_event(const SDL_Event *e, float mx, float my) { (void)e; (void)mx; (void)my; return false; }
 void outfit_render(double time_s) { (void)time_s; }
 void (*outfit_sound)(int kind) = 0;
-
-/* ---- recomp_rt.h: SoR3's randomizer patch, never enabled here (patch_sprite_cap is
- * widescreen.c's, kept since widescreen.c stays a real module). */
-int patch_random;
-uint32_t random_drop_swap(uint32_t item, uint32_t place) { (void)place; return item; }
 
 /* ---- preview.h ---------------------------------------------------------------------- */
 void preview_set_world(bool world, float cam_x, float cam_y, float focus_x, float focus_y) {

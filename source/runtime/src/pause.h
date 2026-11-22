@@ -1,7 +1,9 @@
 /* A small pause menu of our own (pause.c): Resume, Save state, Load state, Rewind/
- * fast-forward on or off, Quit. Not Streets of Rage's menu (tabs, outfits, cheats) --
- * just these few things, over a dimmed, crisp (no blur) copy of the paused frame, so the
- * game stays visible and in its own pixel-art look behind the panel. */
+ * fast-forward on or off, Cheats (a Back-able sub-list: Infinite health, Infinite
+ * lives, Jump to level), Quit. Not Streets of Rage's tabbed menu (outfits, fighter
+ * select) -- just these few things, over a dimmed, crisp (no blur) copy of the
+ * paused frame, so the game stays visible and in its own pixel-art look behind the
+ * panel. */
 #ifndef PAUSE_H
 #define PAUSE_H
 
@@ -13,6 +15,7 @@ typedef enum {
     PAUSE_NONE,
     PAUSE_CLOSE,                        /* resume */
     PAUSE_LOADED,                       /* a save state was loaded: resume */
+    PAUSE_LEVEL_JUMP,                   /* Jump to level: main.c resets the machine into it */
     PAUSE_QUIT,
 } PauseAction;
 

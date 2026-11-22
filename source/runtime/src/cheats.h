@@ -19,4 +19,12 @@ void cheats_frame(void);
  * settings.cheat_unlock. */
 void cheats_hooks(void);
 
+/* Comix Zone: holds $FFBF1E (the published "Level Modifier" Action Replay address) at
+ * stage (0-5) for a couple of seconds after a reset, so a fresh boot reads it whatever
+ * the moment it checks it -- call right before machine_reset(). */
+void cheats_jump_to_level(int stage);
+/* True for a few frames every so often during that hold, pulsing Start so the SEGA logo,
+ * title and any menu in between go by on their own instead of the player having to do it. */
+bool cheats_force_start(void);
+
 #endif

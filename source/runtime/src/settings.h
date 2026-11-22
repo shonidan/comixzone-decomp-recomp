@@ -55,6 +55,8 @@ typedef struct {
     bool cheat_health;                  /* infinite health: no damage, health held full */
     bool cheat_spirit;                  /* infinite spirit power */
     bool cheat_lives;                   /* lives held at 3 or more (both players) */
+    bool cheat_onehit;                  /* Comix Zone: enemies die in one hit (cheats.c) */
+    bool cheat_multijump;                /* Comix Zone: jump again in mid-air (cheats.c) */
     bool cheat_specials;                /* a special attack always left (both players) */
     bool cheat_time;                    /* the round timer held at 99 */
     bool cheat_unlock;                  /* the Options screen's hidden entries (cheats.c) */

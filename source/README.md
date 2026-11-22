@@ -47,12 +47,14 @@ por bloque contra el intérprete (0 instrucciones mal traducidas).
 
 Copia recortada del motor "Streets-of-Rage-Collection-Recomp" (ver
 `../LICENSE`, MIT), genérico para "cualquier cartucho" vía
-`tools/new-game.mjs`/`kit.mjs`. Se le sacó toda la capa específica de
-Streets of Rage que Comix Zone no usa (menú in-game, vestuarios de
-peleadores, trucos, selección de edición, pantalla de lanzador) — queda
-solo lo que permite decomp/recomp genéricamente, más lo propio de este
-juego (control de 6 botones, parche de sonido, sin rebobinado/save
-states).
+`tools/new-game.mjs`/`kit.mjs`. Se le sacó la capa específica de Streets
+of Rage que Comix Zone no usa (su menú tabulado, vestuarios de
+peleadores, selección de edición, pantalla de lanzador) — queda lo que
+permite decomp/recomp genéricamente, más un **menú de pausa propio**
+(Esc o el botón Select/"-" del control): save states, rebobinado/avance
+rápido, y una página de **Cheats** (Infinite health, Infinite lives —sin
+dirección confirmada todavía, no hace nada—, 1-hit kill enemies,
+Multi-jump, Jump to level).
 
 ## Control de 6 botones
 

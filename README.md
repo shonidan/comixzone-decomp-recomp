@@ -11,11 +11,24 @@ obtained copy of the US cartridge ROM (verified SHA-1:
 ## Status
 
 ~95-97% native, playable start to finish, verified block by block against
-an interpreter. One sound bug — all audio permanently freezes about 59
-seconds into any playthrough — was root-caused and fixed with a 2-instruction
-ROM patch; see `decomp/NOTES.md` for the full, detailed writeup (several
-sessions' worth of instrumentation, false starts, and the eventual fix), and
+an interpreter. The sound bug that used to freeze all audio ~59 seconds into
+any playthrough was root-caused and fixed with a 2-instruction ROM patch;
+see `decomp/NOTES.md` for the full, detailed writeup (several sessions'
+worth of instrumentation, false starts, and the eventual fix), and
 `patches/sound-freeze-fix.ips` to apply it yourself.
+
+A small pause menu (Esc or the pad's Select/"-" button) has save states,
+rewind/fast-forward, and a Cheats page: Infinite health, Infinite lives
+(no known address yet, so this one is a no-op), 1-hit kill enemies,
+Multi-jump, and Jump to level (resets into one of 6 scenes — not confirmed
+to be in story order).
+
+One known, minor issue remains open: native and interpreted execution
+start to disagree from frame 1661 of a fixed-seed playthrough on, likely a
+small timing drift rather than a mistranslated instruction (every
+interrupt taken before that point matches exactly, in order, level and
+PC). Not observed to affect actual play; see `decomp/NOTES.md`'s most
+recent session for the investigation and where it left off.
 
 ## Structure
 
@@ -27,8 +40,9 @@ sessions' worth of instrumentation, false starts, and the eventual fix), and
 - `source/` — the playable native recompilation: a self-contained copy of
   the generic decomp/recomp engine (originally built for the Streets of
   Rage Collection, see `LICENSE`), trimmed to just what Comix Zone needs
-  to build and run — no Streets of Rage-specific menu, fighter outfits,
-  cheats or launcher code, plus its own third-party dependencies vendored
+  to build and run — no Streets of Rage's own tabbed menu, fighter
+  outfits or launcher code (its own small pause menu and Cheats page are
+  real, see Status above), plus its own third-party dependencies vendored
   in `source/third_party/` (nothing to download separately). See
   `source/README.md` to build and run it.
 - `patches/sound-freeze-fix.ips` — standard IPS patch fixing the sound
@@ -53,9 +67,11 @@ go run ./sega2asm --help    # see sega2asm/README.md for the exact invocation
 ```bash
 cd source
 node tools/setup.mjs --game comixzone "/path/to/your/ComixZone_U.bin"
-cmake -B build -S . -DGAME=comixzone
-cmake --build build -j
-./build/ComixZone "/path/to/your/ComixZone_U.bin"
+node tools/kit.mjs comixzone    # disassembles, configures, builds, verifies, writes a report
+./build/comixzone/ComixZone "/path/to/your/ComixZone_U.bin"
 ```
+
+Or, once built, just use `./run.sh` at the repo root (looks for the ROM at
+`rom/ComixZone_U.bin`, or takes a path as its one argument).
 
 See `source/README.md` for details and build flags.

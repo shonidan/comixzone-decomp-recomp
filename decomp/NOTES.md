@@ -1,5 +1,53 @@
 # Comix Zone - notas de descompilación
 
+## Resumen ejecutivo de la sesión del 2026-11-22 — frame 1661/1662: descartado que divergiera antes (para retomar rápido)
+
+**Contexto**: continuación directa de la parte 2 del 21/11 (más abajo). Esa
+parte dejó como "próximo paso concreto" comparar la secuencia COMPLETA de
+interrupciones (nivel+PC) entre nativo e intérprete desde bien antes del
+frame divergente, para no asumir que la primera diferencia real cae justo
+en el frame 1661/1662 solo porque ahí es donde el hash de 64KB de RAM deja
+de coincidir.
+
+**Hecho, con `IRQ_DEBUG=1` en ambos modos** (mismo repro de siempre: seed
+1235, `--widescreen 0`, hasta frame 1665): se filtraron todas las líneas
+`[irq]` (una por cada interrupción realmente tomada) de ambas corridas y se
+comparó línea por línea. **Resultado: 117074 líneas idénticas en orden,
+nivel y PC exacto** — recién en el frame 1662 (convención de `g_dbg_frame`,
+= frame 1661 del hash-log) aparece la primera diferencia: la interrupción
+de nivel 6 (VBlank) se toma en `$002804` (nativo) vs `$002CD0` (intérprete).
+
+**Esto descarta la precaución que había quedado pendiente**: no hay ninguna
+divergencia más temprana "escondida" por el hash de 64KB — el registro
+completo de cuándo y dónde se toma cada interrupción, desde el arranque,
+es perfectamente idéntico hasta este punto exacto. El problema es
+genuinamente local a lo que pasa durante el frame 1662, no algo acumulado
+antes que recién se nota ahí.
+
+**Mirando qué son esas direcciones** (`generated/comixzone/main/recomp_00.c`):
+`$002804` es `jmp $2850(pc,d0.w)` (una tabla de salto) y varias de las
+direcciones vecinas que aparecen en el mismo tramo (`$002AAE`, `$002AF4`,
+`$002B76`, `$002BDA`) son todas `move.w $0(a2,d0.w),(a1)+` — el mismo
+patrón repetido a intervalos regulares, consistente con un loop que recorre
+una lista (de objetos/sprites) y salta a una rutina específica por cada
+uno vía tabla de salto. **Hipótesis más consistente con la evidencia**:
+nativo e intérprete procesan una cantidad ligeramente distinta de esa
+lista dentro del frame 1662 — un desvío de timing que recién cruza un
+umbral ahí (después de 1661 frames perfectos), no una instrucción mal
+traducida puntual. No confirmado del todo; no se llegó a identificar el
+bloque específico sin cobertura en ese tramo.
+
+**Próximo paso concreto si se retoma**: identificar qué bloque(s) sin
+cobertura estática caen en el tramo de la tabla de salto de `$002804`
+(`SCHED_DEBUG`/`$0022xx-$0027xx` ya señalado en la parte 2) y ampliar el
+autoplay dirigido para que `--verify` los pueda inspeccionar bloque por
+bloque — hoy caen al intérprete en ambos modos, así que `--verify` no los
+toca y no se puede confirmar si alguno está mal traducido.
+
+**Pausado acá por decisión del usuario** ("cerremos ya") — no es un bug que
+afecte el audio ni la jugabilidad visible hasta ahora, ver sesiones
+anteriores para el detalle completo.
+
 ## Resumen ejecutivo de la sesión del 2026-11-21, parte 2 — localizada la escritura, descartada una hipótesis de causa (para retomar rápido)
 
 **Contexto**: continuación directa de la parte 1 de hoy (más abajo). Esa parte

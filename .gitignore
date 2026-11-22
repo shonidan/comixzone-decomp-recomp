@@ -9,3 +9,13 @@ source/build/
 source/generated/
 source/local.json
 source/settings.ini
+
+# Android build (android-build/README.md has the build steps): the Gradle/CMake
+# build output and local SDK/NDK paths, same reasoning as source/build/ above —
+# the APK is derived from the ROM.
+android/local.properties
+android/.gradle/
+android/build/
+android/app/build/
+android/app/.cxx/
+android-build/*.apk

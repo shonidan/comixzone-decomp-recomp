@@ -352,8 +352,19 @@ void console_attach(void);           /* console.c */
 
 int main(int argc, char **argv) {
     console_attach();
+#ifdef __ANDROID__
+    /* SDL_GetBasePath() is unimplemented on Android (no concept of "next to the exe").
+     * Use the app's own external storage folder (/sdcard/Android/data/<pkg>/files) rather
+     * than internal storage: no permission needed to read/write it, and it's reachable with
+     * a plain `adb push` (unlike internal storage, which needs a debuggable build + run-as,
+     * and which SELinux denies outright on at least one TV box tested). This is also where
+     * the ROM is expected (see android-build/README.md). */
+    const char *bp = SDL_AndroidGetExternalStoragePath();
+    if (bp) snprintf(base_dir, sizeof base_dir, "%s/", bp);
+#else
     char *bp = SDL_GetBasePath();
     if (bp) { snprintf(base_dir, sizeof base_dir, "%s", bp); SDL_free(bp); }
+#endif
     settings_set_base(base_dir);
     music_set_folder(base_dir);
     char ini[1100];
@@ -664,6 +675,18 @@ int main(int argc, char **argv) {
     if (!headless_frames && settings.show_launcher && !no_launcher) {
         apply_settings();
         if (!launcher_run(ini)) { SDL_Quit(); return launcher_window_closed ? EXIT_WINDOW_CLOSED : 0; }
+    }
+#endif
+#ifdef __ANDROID__
+    /* No launcher, no argv, and the app's own storage isn't reachable by `adb push` on at
+     * least one device tested (Android 11 scoped storage blocks it for both internal and
+     * app-specific external storage) — see android-build/README.md. Fall back to a public
+     * path that IS adb-pushable, readable here only with the MANAGE_EXTERNAL_STORAGE
+     * permission granted (also in the README). */
+    if (!settings.rom_path[0]) {
+        const char *fallback = "/sdcard/ComixZone/ComixZone_U.bin";
+        FILE *f = fopen(fallback, "rb");
+        if (f) { fclose(f); snprintf(settings.rom_path, sizeof settings.rom_path, "%s", fallback); }
     }
 #endif
     const char *err = settings.rom_path[0] ? bus_load_rom(settings.rom_path) : "no ROM selected";

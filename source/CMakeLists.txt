@@ -35,12 +35,31 @@ add_subdirectory(third_party/sdl2 EXCLUDE_FROM_ALL)
 # ---- Musashi 68000 interpreter (fallback for code not yet recompiled) --------
 set(MUSASHI_DIR ${CMAKE_SOURCE_DIR}/third_party/musashi)
 set(MUSASHI_GEN ${CMAKE_BINARY_DIR}/musashi_gen)
-add_executable(m68kmake ${MUSASHI_DIR}/m68kmake.c)
-add_custom_command(
-  OUTPUT ${MUSASHI_GEN}/m68kops.c ${MUSASHI_GEN}/m68kops.h
-  COMMAND ${CMAKE_COMMAND} -E make_directory ${MUSASHI_GEN}
-  COMMAND m68kmake ${MUSASHI_GEN} ${MUSASHI_DIR}/m68k_in.c
-  DEPENDS m68kmake ${MUSASHI_DIR}/m68k_in.c)
+if(CMAKE_CROSSCOMPILING)
+  # m68kmake is a codegen tool that runs at build time on the machine doing the build,
+  # not on the target (e.g. Android) — it must not be compiled with the cross toolchain.
+  find_program(M68KMAKE_HOST_CC NAMES cc gcc clang)
+  if(NOT M68KMAKE_HOST_CC)
+    message(FATAL_ERROR "need a host C compiler (cc/gcc/clang) to build m68kmake for cross-compilation")
+  endif()
+  set(M68KMAKE_EXE ${CMAKE_BINARY_DIR}/m68kmake_host)
+  add_custom_command(
+    OUTPUT ${M68KMAKE_EXE}
+    COMMAND ${M68KMAKE_HOST_CC} -O2 -o ${M68KMAKE_EXE} ${MUSASHI_DIR}/m68kmake.c
+    DEPENDS ${MUSASHI_DIR}/m68kmake.c)
+  add_custom_command(
+    OUTPUT ${MUSASHI_GEN}/m68kops.c ${MUSASHI_GEN}/m68kops.h
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${MUSASHI_GEN}
+    COMMAND ${M68KMAKE_EXE} ${MUSASHI_GEN} ${MUSASHI_DIR}/m68k_in.c
+    DEPENDS ${M68KMAKE_EXE} ${MUSASHI_DIR}/m68k_in.c)
+else()
+  add_executable(m68kmake ${MUSASHI_DIR}/m68kmake.c)
+  add_custom_command(
+    OUTPUT ${MUSASHI_GEN}/m68kops.c ${MUSASHI_GEN}/m68kops.h
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${MUSASHI_GEN}
+    COMMAND m68kmake ${MUSASHI_GEN} ${MUSASHI_DIR}/m68k_in.c
+    DEPENDS m68kmake ${MUSASHI_DIR}/m68k_in.c)
+endif()
 add_library(musashi STATIC
   ${MUSASHI_DIR}/m68kcpu.c
   ${MUSASHI_DIR}/m68kdasm.c
@@ -97,7 +116,7 @@ include(cmake/fonts.cmake)
 # ---- Runtime ------------------------------------------------------------------
 # WIN32: a windowed program, so no console window opens with the game (main.c attaches
 # to the terminal it was started from, for the test output).
-add_executable(${GAME_EXE} WIN32
+set(RUNTIME_SOURCES
   runtime/src/main.c
   runtime/src/console.c
   runtime/src/machine.c
@@ -128,14 +147,22 @@ add_executable(${GAME_EXE} WIN32
   ${FONTS_C}
   runtime/src/third.c
   runtime/src/sound.cpp)
-target_link_libraries(${GAME_EXE} PRIVATE recomp musashi z80core ymfm SDL2::SDL2main SDL2::SDL2-static)
-target_include_directories(${GAME_EXE} PRIVATE third_party/single)
+if(ANDROID)
+  # SDLActivity loads a shared library named "main" via JNI; there is no WinMain/exe here.
+  set(MAIN_TARGET main)
+  add_library(${MAIN_TARGET} SHARED ${RUNTIME_SOURCES})
+else()
+  set(MAIN_TARGET ${GAME_EXE})
+  add_executable(${MAIN_TARGET} WIN32 ${RUNTIME_SOURCES})
+endif()
+target_link_libraries(${MAIN_TARGET} PRIVATE recomp musashi z80core ymfm SDL2::SDL2main SDL2::SDL2-static)
+target_include_directories(${MAIN_TARGET} PRIVATE third_party/single)
 # The single-file libraries (third_party/single), as they come: none of the project's warnings.
 set_source_files_properties(runtime/src/decoders.c PROPERTIES COMPILE_OPTIONS "-w")
-target_compile_options(${GAME_EXE} PRIVATE -Wall -Wextra -Wno-unused-parameter)
+target_compile_options(${MAIN_TARGET} PRIVATE -Wall -Wextra -Wno-unused-parameter)
 if(WIN32)
-  target_link_options(${GAME_EXE} PRIVATE -static)
-  target_link_libraries(${GAME_EXE} PRIVATE gdi32 comdlg32 mfplat mfreadwrite mfuuid ole32)
+  target_link_options(${MAIN_TARGET} PRIVATE -static)
+  target_link_libraries(${MAIN_TARGET} PRIVATE gdi32 comdlg32 mfplat mfreadwrite mfuuid ole32)
 endif()
 
 # ---- The collection's front end (built with the first game) -----------------------
